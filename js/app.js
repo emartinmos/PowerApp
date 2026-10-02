@@ -57,11 +57,11 @@ const LS_KEYS = {
     MARCAS_1RM: 'pl_marcas_1rm'
 };
 
-// Valores por defecto para las marcas 1RM
+// Valores iniciales limpios para las marcas 1RM (iniciadas estrictamente en 0 kg)
 const MARCAS_1RM_DEFECTO = {
-    squat: 272.5,
-    bench: 170,
-    deadlift: 315
+    squat: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null },
+    bench: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null },
+    deadlift: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null }
 };
 
 /**
@@ -139,11 +139,46 @@ function guardarEjerciciosCustom(ejercicios) {
 }
 
 /**
- * Obtiene las marcas 1RM del usuario.
- * @returns {Object} { squat, bench, deadlift } en kg
+ * Normaliza el objeto de marcas 1RM garantizando su esquema dual (PR y e1RM).
+ */
+function normalizarMarcas1RM(marcasRaw) {
+    const base = {
+        squat: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null },
+        bench: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null },
+        deadlift: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null }
+    };
+    if (!marcasRaw || typeof marcasRaw !== 'object') return base;
+
+    ['squat', 'bench', 'deadlift'].forEach(k => {
+        if (typeof marcasRaw[k] === 'number') {
+            base[k].pr = marcasRaw[k] || 0;
+            base[k].e1rm = marcasRaw[k] || 0;
+        } else if (marcasRaw[k] && typeof marcasRaw[k] === 'object') {
+            base[k].pr = parseFloat(marcasRaw[k].pr) || 0;
+            base[k].e1rm = parseFloat(marcasRaw[k].e1rm) || 0;
+            base[k].fechaPR = marcasRaw[k].fechaPR || null;
+            base[k].fechaE1RM = marcasRaw[k].fechaE1RM || null;
+        }
+    });
+    return base;
+}
+
+/**
+ * Obtiene las marcas 1RM del usuario normalizadas en 0 si no existen.
+ * @returns {Object} { squat: { pr, e1rm, fechaPR, fechaE1RM }, ... }
  */
 function obtenerMarcas1RM() {
-    return leerLocalStorage(LS_KEYS.MARCAS_1RM, { ...MARCAS_1RM_DEFECTO });
+    const raw = leerLocalStorage(LS_KEYS.MARCAS_1RM, null);
+    return normalizarMarcas1RM(raw);
+}
+
+/**
+ * Devuelve el valor numérico representativo de 1RM para un movimiento.
+ */
+function obtenerRMNumero(marcas, tipo) {
+    if (!marcas || !marcas[tipo]) return 0;
+    if (typeof marcas[tipo] === 'number') return marcas[tipo];
+    return Math.max(marcas[tipo].pr || 0, marcas[tipo].e1rm || 0);
 }
 
 /**
@@ -442,7 +477,11 @@ function actualizarNavActivo(vistaId) {
 /**
  * Inicializa los event listeners del bottom nav.
  */
+let _navegacionInicializada = false;
 function inicializarNavegacion() {
+    if (_navegacionInicializada) return;
+    _navegacionInicializada = true;
+
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
         item.addEventListener('click', () => {
@@ -480,7 +519,11 @@ function inicializarNavegacion() {
 /**
  * Inicializa la lógica de tabs en la vista de historial.
  */
+let _tabsInicializadas = false;
 function inicializarTabs() {
+    if (_tabsInicializadas) return;
+    _tabsInicializadas = true;
+
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -566,7 +609,11 @@ function mostrarConfirmacion(texto, onConfirmar, textoBoton = 'Eliminar') {
 /**
  * Inicializa los botones del modal de confirmación.
  */
+let _modalConfirmarInicializado = false;
 function inicializarModalConfirmar() {
+    if (_modalConfirmarInicializado) return;
+    _modalConfirmarInicializado = true;
+
     const btnCancelar = document.getElementById('btn-cancelar-confirmar');
     const btnAceptar = document.getElementById('btn-aceptar-confirmar');
     const modal = document.getElementById('modal-confirmar');
@@ -600,7 +647,11 @@ function inicializarModalConfirmar() {
  * Funciona tanto para steppers estáticos del HTML como los
  * generados dinámicamente por JS.
  */
+let _steppersInicializados = false;
 function inicializarSteppers() {
+    if (_steppersInicializados) return;
+    _steppersInicializados = true;
+
     document.addEventListener('click', (e) => {
         const boton = e.target.closest('.stepper-btn');
         if (!boton) return;
@@ -646,59 +697,177 @@ function inicializarSteppers() {
 
 
 // ============================================================
-// 9. GESTIÓN DE 1RM Y CALCULADORA DE PORCENTAJES
+// 9. GESTIÓN DE 1RM, e1RM Y CALCULADORA DE INTENSIDAD
 // ============================================================
 
 /**
- * Carga los valores de 1RM del localStorage y los muestra
- * en los inputs correspondientes de la vista de Historial.
+ * Calcula el 1RM estimado (e1RM) a partir de peso, repeticiones y RPE
+ * utilizando la fórmula de Epley combinada con Reps en Recámara (RIR).
+ * @param {number} peso - Peso movido en kg
+ * @param {number} reps - Repeticiones completadas
+ * @param {number} rpe - Índice de esfuerzo percibido (5-10)
+ * @returns {number} e1RM redondeado al múltiplo más cercano de 0.5 kg
  */
-function cargar1RMEnInputs() {
+function calcularE1RM(peso, reps, rpe) {
+    if (!peso || peso <= 0 || !reps || reps <= 0) return 0;
+    const rpeVal = Math.min(10, Math.max(5, parseFloat(rpe) || 10));
+
+    // Si es 1 repetición a RPE 10 exacto, el e1RM es la carga levantada
+    if (reps === 1 && rpeVal === 10) return Math.round(peso * 2) / 2;
+
+    const repsEnRecamara = Math.max(0, 10 - rpeVal);
+    const repsTotalesPotenciales = reps + repsEnRecamara;
+    const e1rm = peso * (1 + repsTotalesPotenciales / 30);
+    return Math.round(e1rm * 2) / 2; // Múltiplo de 0.5 kg
+}
+
+/**
+ * Recorre todas las series completadas de una sesión finalizada,
+ * identifica si pertenecen a los 3 básicos y actualiza automáticamente
+ * el PR Real y el e1RM si superan los valores guardados.
+ * @param {Object} sesion - Objeto de la sesión recién completada
+ * @returns {Array<string>} Nombres de los básicos con nuevo récord alcanzado
+ */
+function calcularYActualizar1RM(sesion) {
+    if (!sesion || !Array.isArray(sesion.ejercicios)) return [];
+
     const marcas = obtenerMarcas1RM();
+    const nuevosRecords = [];
+    const fechaSesion = sesion.fecha || new Date().toISOString();
 
-    const inputSquat = document.getElementById('input-1rm-squat');
-    const inputBench = document.getElementById('input-1rm-bench');
-    const inputDeadlift = document.getElementById('input-1rm-deadlift');
+    sesion.ejercicios.forEach(ej => {
+        const cat = ej.categoria;
+        const tipo = obtenerTipo1RM(cat);
+        if (!tipo) return; // Solo procesa básico squat, bench o deadlift
 
-    if (inputSquat) inputSquat.value = marcas.squat;
-    if (inputBench) inputBench.value = marcas.bench;
-    if (inputDeadlift) inputDeadlift.value = marcas.deadlift;
+        (ej.series || []).forEach(serie => {
+            if (!serie.completada) return;
+
+            const peso = parseFloat(serie.peso) || 0;
+            const reps = parseInt(serie.reps, 10) || 0;
+            const rpe = parseFloat(serie.rpe) || 10;
+            if (peso <= 0 || reps <= 0) return;
+
+            const e1rmCalc = calcularE1RM(peso, reps, rpe);
+            let recordDetectado = false;
+
+            // 1. Verificación de PR Real (peso absoluto levantado)
+            if (peso > (marcas[tipo].pr || 0)) {
+                marcas[tipo].pr = peso;
+                marcas[tipo].fechaPR = fechaSesion;
+                recordDetectado = true;
+            }
+
+            // 2. Verificación de e1RM Estimado (según Epley y RPE)
+            if (e1rmCalc > (marcas[tipo].e1rm || 0)) {
+                marcas[tipo].e1rm = e1rmCalc;
+                marcas[tipo].fechaE1RM = fechaSesion;
+                recordDetectado = true;
+            }
+
+            if (recordDetectado) {
+                const nombresMap = { squat: 'SENTADILLA', bench: 'PRESS DE BANCA', deadlift: 'PESO MUERTO' };
+                if (!nuevosRecords.includes(nombresMap[tipo])) {
+                    nuevosRecords.push(nombresMap[tipo]);
+                }
+            }
+        });
+    });
+
+    if (nuevosRecords.length > 0) {
+        guardarMarcas1RM(marcas);
+        renderizar1RM();
+        actualizarTabla1RM();
+    }
+
+    return nuevosRecords;
 }
 
 /**
- * Lee los inputs de 1RM y guarda los valores en localStorage.
+ * Pinta en el DOM las tarjetas de 1RM con PR Real, e1RM y el TOTAL de Powerlifting.
  */
-function guardar1RMDesdeInputs() {
-    const inputSquat = document.getElementById('input-1rm-squat');
-    const inputBench = document.getElementById('input-1rm-bench');
-    const inputDeadlift = document.getElementById('input-1rm-deadlift');
+function renderizar1RM() {
+    const contenedor = document.getElementById('grid-tarjetas-1rm');
+    if (!contenedor) return;
 
-    const marcas = {
-        squat: parseFloat(inputSquat?.value) || 0,
-        bench: parseFloat(inputBench?.value) || 0,
-        deadlift: parseFloat(inputDeadlift?.value) || 0
-    };
+    const marcas = obtenerMarcas1RM();
+    const basicos = [
+        { id: 'squat', tag: 'SQ', nombre: 'SENTADILLA (SQUAT)' },
+        { id: 'bench', tag: 'BP', nombre: 'PRESS DE BANCA (BENCH)' },
+        { id: 'deadlift', tag: 'DL', nombre: 'PESO MUERTO (DEADLIFT)' }
+    ];
 
-    guardarMarcas1RM(marcas);
-    mostrarToast('1RM ACTUALIZADO');
-    actualizarTabla1RM();
+    let totalPR = 0;
+    let totalE1RM = 0;
+
+    let html = basicos.map(item => {
+        const datos = marcas[item.id] || { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null };
+        totalPR += (datos.pr || 0);
+        totalE1RM += (datos.e1rm || 0);
+
+        const fechaPRTxt = datos.fechaPR ? formatearFecha(datos.fechaPR).corta : '--';
+        const fechaE1RMTxt = datos.fechaE1RM ? formatearFecha(datos.fechaE1RM).corta : '--';
+
+        return `
+            <div class="tarjeta-1rm-pro">
+                <div class="tarjeta-1rm-top">
+                    <span class="badge-cat ${item.tag.toLowerCase()}">${item.tag}</span>
+                    <span class="tarjeta-1rm-titulo">${item.nombre}</span>
+                </div>
+                <div class="tarjeta-1rm-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">PR REAL</span>
+                        <span class="stat-valor">${datos.pr || 0} <span style="font-size: 0.75rem; color: var(--gris-medio);">KG</span></span>
+                        <span class="stat-fecha">${fechaPRTxt}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">e1RM (RPE)</span>
+                        <span class="stat-valor e1rm">${datos.e1rm || 0} <span style="font-size: 0.75rem; color: var(--gris-medio);">KG</span></span>
+                        <span class="stat-fecha">${fechaE1RMTxt}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Tarjeta del TOTAL Powerlifting
+    html += `
+        <div class="tarjeta-1rm-pro total">
+            <div class="tarjeta-1rm-top">
+                <span class="badge-cat tot">TOT</span>
+                <span class="tarjeta-1rm-titulo" style="color: var(--rojo);">TOTAL POWERLIFTING</span>
+            </div>
+            <div class="tarjeta-1rm-stats">
+                <div class="stat-item">
+                    <span class="stat-label">TOTAL PR</span>
+                    <span class="stat-valor">${Math.round(totalPR * 10) / 10} <span style="font-size: 0.75rem; color: var(--gris-medio);">KG</span></span>
+                    <span class="stat-fecha">SUMA REAL</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">TOTAL e1RM</span>
+                    <span class="stat-valor e1rm">${Math.round(totalE1RM * 10) / 10} <span style="font-size: 0.75rem; color: var(--gris-medio);">KG</span></span>
+                    <span class="stat-fecha">SUMA ESTIMADA</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    contenedor.innerHTML = html;
 }
 
 /**
- * Calcula el porcentaje de un peso respecto al 1RM.
+ * Calcula el porcentaje de un peso respecto al 1RM (evitando divisiones por cero).
  * @param {number} peso - Peso en kg
  * @param {number} rm - 1RM en kg
  * @returns {number} Porcentaje (0-100+)
  */
 function calcularPorcentaje1RM(peso, rm) {
     if (!rm || rm <= 0) return 0;
-    return Math.round((peso / rm) * 1000) / 10; // Un decimal
+    return Math.round((peso / rm) * 1000) / 10;
 }
 
 /**
  * Determina la categoría de 1RM de un ejercicio.
- * Devuelve 'squat', 'bench' o 'deadlift' si el ejercicio pertenece
- * a esa categoría principal, o null si es un accesorio.
  * @param {string} categoriaId - Categoría del ejercicio
  * @returns {string|null}
  */
@@ -711,7 +880,6 @@ function obtenerTipo1RM(categoriaId) {
 
 /**
  * Genera y muestra la tabla de porcentajes en la calculadora.
- * Calcula desde el 50% hasta el 100% del 1RM seleccionado.
  */
 function actualizarTabla1RM() {
     const selectEjercicio = document.getElementById('calc-ejercicio');
@@ -720,43 +888,36 @@ function actualizarTabla1RM() {
 
     const tipo = selectEjercicio.value; // 'squat', 'bench' o 'deadlift'
     const marcas = obtenerMarcas1RM();
-    const rm = marcas[tipo] || 0;
+    const rm = obtenerRMNumero(marcas, tipo);
 
     if (rm <= 0) {
         tablaPorcentajes.innerHTML = `
             <div class="empty-state-mini">
-                <p>Introduce tu 1RM arriba para ver la tabla de porcentajes</p>
+                <p>SIN REGISTRO DE 1RM EN ESTE BÁSICO (0 KG)</p>
             </div>
         `;
         return;
     }
 
-    // Porcentajes a mostrar
     const porcentajes = [100, 97.5, 95, 92.5, 90, 87.5, 85, 82.5, 80, 77.5, 75, 72.5, 70, 67.5, 65, 62.5, 60, 57.5, 55, 52.5, 50];
 
-    let html = '';
-
-    // Header de la tabla
-    html += `
+    let html = `
         <div class="tabla-fila tabla-fila-header">
-            <span class="tabla-col">%</span>
-            <span class="tabla-col">Peso (kg)</span>
-            <span class="tabla-col">Peso (kg)</span>
+            <span class="tabla-col">% 1RM</span>
+            <span class="tabla-col">CARGA EXACTA</span>
+            <span class="tabla-col">REDONDEO 2.5 KG</span>
         </div>
     `;
 
-    // Filas de porcentajes (dos por fila para ahorrar espacio no es necesario,
-    // mejor una por fila para claridad)
     porcentajes.forEach(pct => {
-        const peso = Math.round((rm * pct / 100) * 10) / 10; // Un decimal
-        // Redondear al disco más cercano (2.5 kg)
+        const peso = Math.round((rm * pct / 100) * 10) / 10;
         const pesoRedondeado = Math.round(peso / 2.5) * 2.5;
 
         html += `
             <div class="tabla-fila">
                 <span class="tabla-col">${pct}%</span>
-                <span class="tabla-col">${peso}</span>
-                <span class="tabla-col">${pesoRedondeado}</span>
+                <span class="tabla-col">${peso} KG</span>
+                <span class="tabla-col">${pesoRedondeado} KG</span>
             </div>
         `;
     });
@@ -765,23 +926,38 @@ function actualizarTabla1RM() {
 }
 
 /**
- * Inicializa los eventos de la sección 1RM.
+ * Inicializa los eventos de la sección 1RM (automático + reset a 0).
  */
+let _1rmInicializado = false;
 function inicializar1RM() {
-    // Botón guardar 1RM
-    const btnGuardar = document.getElementById('btn-guardar-1rm');
-    if (btnGuardar) {
-        btnGuardar.addEventListener('click', guardar1RMDesdeInputs);
+    if (_1rmInicializado) return;
+    _1rmInicializado = true;
+
+    // Botón resetear a 0 con confirmación
+    const btnReset = document.getElementById('btn-reset-1rm');
+    if (btnReset) {
+        btnReset.addEventListener('click', () => {
+            mostrarConfirmacion('¿Seguro que deseas reiniciar todos tus registros de 1RM a 0 kg?', () => {
+                const marcasCero = {
+                    squat: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null },
+                    bench: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null },
+                    deadlift: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null }
+                };
+                guardarMarcas1RM(marcasCero);
+                renderizar1RM();
+                actualizarTabla1RM();
+                mostrarToast('MARCAS REINICIADAS A 0 KG');
+            }, 'REINICIAR');
+        });
     }
 
-    // Selector de ejercicio para la calculadora
+    // Selector calculadora
     const selectCalc = document.getElementById('calc-ejercicio');
     if (selectCalc) {
         selectCalc.addEventListener('change', actualizarTabla1RM);
     }
 
-    // Cargar valores actuales
-    cargar1RMEnInputs();
+    renderizar1RM();
     actualizarTabla1RM();
 }
 
@@ -1028,41 +1204,10 @@ function abrirDetalleSesion(sesionId) {
 
 
 // ============================================================
-// 12. INICIALIZACIÓN DE LA APP (DOMContentLoaded)
+// 12. INICIALIZACIÓN DE LA APP
+// Nota: La inicialización unificada de todas las partes se ejecuta
+// al final del archivo mediante initApp().
 // ============================================================
-
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[POWERAPP] PowerLifting Tracker - Iniciando...');
-
-    // 1. Cargar el catálogo de ejercicios
-    await cargarCatalogoEjercicios();
-
-    // 2. Inicializar sistemas de UI
-    inicializarNavegacion();
-    inicializarTabs();
-    inicializarSteppers();
-    inicializarModalConfirmar();
-
-    // 3. Inicializar sección de 1RM
-    inicializar1RM();
-
-    // 4. Renderizar las vistas iniciales
-    renderizarRutinasEntrenar();
-    renderizarRutinasConstructor();
-    renderizarHistorial();
-
-    // 5. Inicializar Constructor de Rutinas (PARTE 2)
-    if (typeof inicializarConstructor === 'function') {
-        inicializarConstructor();
-    }
-
-    // 6. Inicializar Cronómetro (PARTE 3)
-    if (typeof inicializarCronometro === 'function') {
-        inicializarCronometro();
-    }
-
-    console.log('[OK] PowerLifting Tracker - Listo');
-});
 
 
 // ============================================================
@@ -1295,8 +1440,31 @@ function guardarNuevoEjercicioCustom() {
 }
 
 // ------------------------------------------------------------
-// C. CONFIGURADOR DE SERIES DINÁMICAS (WARM-UP / TOP SET / BACK-OFF)
+// C. CONFIGURADOR DE SERIES DINÁMICAS (WARM-UP / TOP SET / BACK-OFF / PLANAS)
 // ------------------------------------------------------------
+
+/**
+ * Alterna el modo del modal de configuración entre "topset" y "planas".
+ * @param {'topset'|'planas'} formato
+ */
+function cambiarFormatoSeriesModal(formato) {
+    const btnTopset = document.querySelector('#selector-formato-series .btn-formato[data-formato="topset"]');
+    const btnPlanas = document.querySelector('#selector-formato-series .btn-formato[data-formato="planas"]');
+    const panelTopset = document.getElementById('panel-formato-topset');
+    const panelPlanas = document.getElementById('panel-formato-planas');
+
+    if (formato === 'planas') {
+        if (btnTopset) btnTopset.classList.remove('activo');
+        if (btnPlanas) btnPlanas.classList.add('activo');
+        if (panelTopset) panelTopset.classList.add('oculto');
+        if (panelPlanas) panelPlanas.classList.remove('oculto');
+    } else {
+        if (btnPlanas) btnPlanas.classList.remove('activo');
+        if (btnTopset) btnTopset.classList.add('activo');
+        if (panelPlanas) panelPlanas.classList.add('oculto');
+        if (panelTopset) panelTopset.classList.remove('oculto');
+    }
+}
 
 /**
  * Abre el modal para definir series, reps y RPE de un ejercicio.
@@ -1316,28 +1484,62 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
     const inputRpeTop = document.getElementById('input-rpe-objetivo');
     const inputRepsBackoff = document.getElementById('input-reps-backoff');
 
+    const inputPlanasWarmup = document.getElementById('input-planas-warmup');
+    const inputPlanasSeries = document.getElementById('input-planas-series');
+    const inputPlanasReps = document.getElementById('input-planas-reps');
+    const inputPlanasRpe = document.getElementById('input-planas-rpe');
+
     const ej = buscarEjercicioPorId(ejercicioId);
     if (titulo) {
         titulo.textContent = ej ? ej.nombre : 'Configurar Series';
     }
 
     if (indexEditar !== null && APP.editorRutina.ejercicios[indexEditar]) {
-        // Cargar valores existentes del borrador
-        const configExistente = APP.editorRutina.ejercicios[indexEditar].resumenConfig;
-        if (inputWarmup) inputWarmup.value = configExistente.warmup;
-        if (inputTop) inputTop.value = configExistente.topset;
-        if (inputBackoff) inputBackoff.value = configExistente.backoff;
-        if (inputRepsTop) inputRepsTop.value = configExistente.repsTop;
-        if (inputRpeTop) inputRpeTop.value = configExistente.rpeTop;
-        if (inputRepsBackoff) inputRepsBackoff.value = configExistente.repsBackoff;
+        const item = APP.editorRutina.ejercicios[indexEditar];
+        const configExistente = item.resumenConfig || {};
+        const esPlanas = item.formato === 'planas' || configExistente.formato === 'planas' || (configExistente.planas !== undefined);
+
+        if (esPlanas) {
+            cambiarFormatoSeriesModal('planas');
+            if (inputPlanasWarmup) inputPlanasWarmup.value = configExistente.warmup ?? 1;
+            if (inputPlanasSeries) inputPlanasSeries.value = configExistente.planas ?? 3;
+            if (inputPlanasReps) inputPlanasReps.value = configExistente.repsPlanas ?? 8;
+            if (inputPlanasRpe) inputPlanasRpe.value = configExistente.rpePlanas ?? 8;
+
+            if (inputWarmup) inputWarmup.value = 2;
+            if (inputTop) inputTop.value = 1;
+            if (inputBackoff) inputBackoff.value = 3;
+            if (inputRepsTop) inputRepsTop.value = 3;
+            if (inputRpeTop) inputRpeTop.value = 8;
+            if (inputRepsBackoff) inputRepsBackoff.value = 5;
+        } else {
+            cambiarFormatoSeriesModal('topset');
+            if (inputWarmup) inputWarmup.value = configExistente.warmup ?? 2;
+            if (inputTop) inputTop.value = configExistente.topset ?? 1;
+            if (inputBackoff) inputBackoff.value = configExistente.backoff ?? 3;
+            if (inputRepsTop) inputRepsTop.value = configExistente.repsTop ?? 3;
+            if (inputRpeTop) inputRpeTop.value = configExistente.rpeTop ?? 8;
+            if (inputRepsBackoff) inputRepsBackoff.value = configExistente.repsBackoff ?? 5;
+
+            if (inputPlanasWarmup) inputPlanasWarmup.value = 1;
+            if (inputPlanasSeries) inputPlanasSeries.value = 3;
+            if (inputPlanasReps) inputPlanasReps.value = 8;
+            if (inputPlanasRpe) inputPlanasRpe.value = 8;
+        }
     } else {
-        // Valores recomendados por defecto en Powerlifting
+        // Por defecto arranca en Top Set + Back-off con valores estándar
+        cambiarFormatoSeriesModal('topset');
         if (inputWarmup) inputWarmup.value = 2;
         if (inputTop) inputTop.value = 1;
         if (inputBackoff) inputBackoff.value = 3;
         if (inputRepsTop) inputRepsTop.value = 3;
         if (inputRpeTop) inputRpeTop.value = 8;
         if (inputRepsBackoff) inputRepsBackoff.value = 5;
+
+        if (inputPlanasWarmup) inputPlanasWarmup.value = 1;
+        if (inputPlanasSeries) inputPlanasSeries.value = 3;
+        if (inputPlanasReps) inputPlanasReps.value = 8;
+        if (inputPlanasRpe) inputPlanasRpe.value = 8;
     }
 
     if (modal) modal.classList.add('activo');
@@ -1359,74 +1561,124 @@ function cerrarModalConfigSeries() {
 function confirmarConfigSeries() {
     if (!ejercicioSeleccionadoParaConfig) return;
 
-    const warmupCount = Math.max(0, parseInt(document.getElementById('input-warmup-series')?.value) || 0);
-    const topCount = Math.max(0, parseInt(document.getElementById('input-top-series')?.value) || 0);
-    const backoffCount = Math.max(0, parseInt(document.getElementById('input-backoff-series')?.value) || 0);
+    const btnPlanas = document.querySelector('#selector-formato-series .btn-formato[data-formato="planas"]');
+    const esFormatoPlanas = btnPlanas && btnPlanas.classList.contains('activo');
 
-    const repsTop = Math.max(1, parseInt(document.getElementById('input-reps-objetivo')?.value) || 1);
-    const rpeTop = Math.min(10, Math.max(5, parseFloat(document.getElementById('input-rpe-objetivo')?.value) || 8));
-    const repsBackoff = Math.max(1, parseInt(document.getElementById('input-reps-backoff')?.value) || 1);
-
-    if (warmupCount + topCount + backoffCount === 0) {
-        mostrarToast('CONFIGURA AL MENOS 1 SERIE');
-        return;
-    }
-
-    // Generar la estructura de series individuales para la sesión
     const seriesConstruidas = [];
+    let itemEjercicio = null;
 
-    // 1. Series de aproximación (Warm-up)
-    for (let i = 1; i <= warmupCount; i++) {
-        seriesConstruidas.push({
-            tipo: 'warmup',
-            etiqueta: 'Warm-up',
-            repsObjetivo: repsTop + 2,
-            rpeObjetivo: 6,
-            pesoSugerido: 0
-        });
+    if (esFormatoPlanas) {
+        const warmupCount = Math.max(0, parseInt(document.getElementById('input-planas-warmup')?.value) || 0);
+        const seriesPlanasCount = Math.max(0, parseInt(document.getElementById('input-planas-series')?.value) || 0);
+        const repsPlanas = Math.max(1, parseInt(document.getElementById('input-planas-reps')?.value) || 8);
+        const rpePlanas = Math.min(10, Math.max(5, parseFloat(document.getElementById('input-planas-rpe')?.value) || 8));
+
+        if (warmupCount + seriesPlanasCount === 0) {
+            mostrarToast('CONFIGURA AL MENOS 1 SERIE');
+            return;
+        }
+
+        // 1. Series de aproximación (Warm-up)
+        for (let i = 1; i <= warmupCount; i++) {
+            seriesConstruidas.push({
+                tipo: 'warmup',
+                etiqueta: 'Warm-up',
+                repsObjetivo: repsPlanas,
+                rpeObjetivo: 6,
+                pesoSugerido: 0
+            });
+        }
+
+        // 2. Series efectivas planas
+        for (let i = 1; i <= seriesPlanasCount; i++) {
+            seriesConstruidas.push({
+                tipo: 'plana',
+                etiqueta: 'Plana',
+                repsObjetivo: repsPlanas,
+                rpeObjetivo: rpePlanas,
+                pesoSugerido: 0
+            });
+        }
+
+        itemEjercicio = {
+            ejercicioId: ejercicioSeleccionadoParaConfig,
+            formato: 'planas',
+            resumenConfig: {
+                formato: 'planas',
+                warmup: warmupCount,
+                planas: seriesPlanasCount,
+                repsPlanas: repsPlanas,
+                rpePlanas: rpePlanas
+            },
+            series: seriesConstruidas
+        };
+    } else {
+        const warmupCount = Math.max(0, parseInt(document.getElementById('input-warmup-series')?.value) || 0);
+        const topCount = Math.max(0, parseInt(document.getElementById('input-top-series')?.value) || 0);
+        const backoffCount = Math.max(0, parseInt(document.getElementById('input-backoff-series')?.value) || 0);
+
+        const repsTop = Math.max(1, parseInt(document.getElementById('input-reps-objetivo')?.value) || 1);
+        const rpeTop = Math.min(10, Math.max(5, parseFloat(document.getElementById('input-rpe-objetivo')?.value) || 8));
+        const repsBackoff = Math.max(1, parseInt(document.getElementById('input-reps-backoff')?.value) || 1);
+
+        if (warmupCount + topCount + backoffCount === 0) {
+            mostrarToast('CONFIGURA AL MENOS 1 SERIE');
+            return;
+        }
+
+        // 1. Series de aproximación (Warm-up)
+        for (let i = 1; i <= warmupCount; i++) {
+            seriesConstruidas.push({
+                tipo: 'warmup',
+                etiqueta: 'Warm-up',
+                repsObjetivo: repsTop + 2,
+                rpeObjetivo: 6,
+                pesoSugerido: 0
+            });
+        }
+
+        // 2. Series principales / pico (Top Set)
+        for (let i = 1; i <= topCount; i++) {
+            seriesConstruidas.push({
+                tipo: 'topset',
+                etiqueta: 'Top Set',
+                repsObjetivo: repsTop,
+                rpeObjetivo: rpeTop,
+                pesoSugerido: 0
+            });
+        }
+
+        // 3. Series efectivas de bajada (Back-off Sets)
+        for (let i = 1; i <= backoffCount; i++) {
+            seriesConstruidas.push({
+                tipo: 'backoff',
+                etiqueta: 'Back-off',
+                repsObjetivo: repsBackoff,
+                rpeObjetivo: Math.max(5, rpeTop - 1),
+                pesoSugerido: 0
+            });
+        }
+
+        itemEjercicio = {
+            ejercicioId: ejercicioSeleccionadoParaConfig,
+            formato: 'topset',
+            resumenConfig: {
+                formato: 'topset',
+                warmup: warmupCount,
+                topset: topCount,
+                backoff: backoffCount,
+                repsTop: repsTop,
+                rpeTop: rpeTop,
+                repsBackoff: repsBackoff
+            },
+            series: seriesConstruidas
+        };
     }
-
-    // 2. Series principales / pico (Top Set)
-    for (let i = 1; i <= topCount; i++) {
-        seriesConstruidas.push({
-            tipo: 'topset',
-            etiqueta: 'Top Set',
-            repsObjetivo: repsTop,
-            rpeObjetivo: rpeTop,
-            pesoSugerido: 0
-        });
-    }
-
-    // 3. Series efectivas de bajada (Back-off Sets)
-    for (let i = 1; i <= backoffCount; i++) {
-        seriesConstruidas.push({
-            tipo: 'backoff',
-            etiqueta: 'Back-off',
-            repsObjetivo: repsBackoff,
-            rpeObjetivo: Math.max(5, rpeTop - 1),
-            pesoSugerido: 0
-        });
-    }
-
-    const itemEjercicio = {
-        ejercicioId: ejercicioSeleccionadoParaConfig,
-        resumenConfig: {
-            warmup: warmupCount,
-            topset: topCount,
-            backoff: backoffCount,
-            repsTop: repsTop,
-            rpeTop: rpeTop,
-            repsBackoff: repsBackoff
-        },
-        series: seriesConstruidas
-    };
 
     if (indexEjercicioEnEdicion !== null && indexEjercicioEnEdicion >= 0) {
-        // Reemplazo en posición de edición
         APP.editorRutina.ejercicios[indexEjercicioEnEdicion] = itemEjercicio;
         mostrarToast('Series actualizadas');
     } else {
-        // Añadir nuevo ejercicio al final del borrador
         APP.editorRutina.ejercicios.push(itemEjercicio);
         mostrarToast('Ejercicio añadido a la rutina');
     }
@@ -1458,12 +1710,17 @@ function renderizarEjerciciosEditor() {
     contenedor.innerHTML = APP.editorRutina.ejercicios.map((item, index) => {
         const ejInfo = buscarEjercicioPorId(item.ejercicioId);
         const nombre = ejInfo ? ejInfo.nombre : 'Ejercicio';
-        const cfg = item.resumenConfig;
+        const cfg = item.resumenConfig || {};
 
         const partesResumen = [];
-        if (cfg.warmup > 0) partesResumen.push(`${cfg.warmup} Warm-up`);
-        if (cfg.topset > 0) partesResumen.push(`${cfg.topset} Top Set (${cfg.repsTop} reps @ RPE ${cfg.rpeTop})`);
-        if (cfg.backoff > 0) partesResumen.push(`${cfg.backoff} Back-off (${cfg.repsBackoff} reps)`);
+        if (item.formato === 'planas' || cfg.formato === 'planas' || cfg.planas !== undefined) {
+            if (cfg.warmup > 0) partesResumen.push(`${cfg.warmup} Warm-up`);
+            if (cfg.planas > 0) partesResumen.push(`${cfg.planas} Planas (${cfg.repsPlanas} reps @ RPE ${cfg.rpePlanas})`);
+        } else {
+            if (cfg.warmup > 0) partesResumen.push(`${cfg.warmup} Warm-up`);
+            if (cfg.topset > 0) partesResumen.push(`${cfg.topset} Top Set (${cfg.repsTop} reps @ RPE ${cfg.rpeTop})`);
+            if (cfg.backoff > 0) partesResumen.push(`${cfg.backoff} Back-off (${cfg.repsBackoff} reps)`);
+        }
 
         return `
             <div class="ejercicio-rutina-card" data-index="${index}">
@@ -1655,7 +1912,11 @@ function salirDelEditorRutina() {
 // F. INICIALIZACIÓN DE EVENTOS DEL CONSTRUCTOR (PARTE 2)
 // ------------------------------------------------------------
 
+let _constructorInicializado = false;
 function inicializarConstructor() {
+    if (_constructorInicializado) return;
+    _constructorInicializado = true;
+
     // 1. Botón "Nueva" en el constructor
     const btnNuevaRutina = document.getElementById('btn-nueva-rutina');
     if (btnNuevaRutina) {
@@ -1723,11 +1984,17 @@ function inicializarConstructor() {
     if (btnConfirmarConfig) {
         btnConfirmarConfig.addEventListener('click', confirmarConfigSeries);
     }
-}
 
-// Ejecutar inicialización si el documento ya está cargado
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    inicializarConstructor();
+    // 8. Switch de formato de series (Top Set vs Planas)
+    const botonesFormato = document.querySelectorAll('#selector-formato-series .btn-formato');
+    botonesFormato.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const formato = e.currentTarget.dataset.formato;
+            if (formato) {
+                cambiarFormatoSeriesModal(formato);
+            }
+        });
+    });
 }
 
 
@@ -1818,7 +2085,7 @@ function tickCronometro() {
 
         const btnPausar = document.getElementById('btn-cronometro-pausar');
         if (btnPausar) {
-            btnPausar.textContent = '▶️';
+            btnPausar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
         }
 
         // Vibración háptica en móvil (si el navegador lo permite)
@@ -1860,7 +2127,7 @@ function iniciarCronometro(segundos = null) {
 
     const btnPausar = document.getElementById('btn-cronometro-pausar');
     if (btnPausar) {
-        btnPausar.textContent = '⏸️';
+        btnPausar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/></svg>';
     }
 
     actualizarVistaCronometro();
@@ -1884,7 +2151,9 @@ function alternarPausaCronometro() {
     APP.cronometro.pausado = !APP.cronometro.pausado;
 
     if (btnPausar) {
-        btnPausar.textContent = APP.cronometro.pausado ? '▶️' : '⏸️';
+        btnPausar.innerHTML = APP.cronometro.pausado
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/></svg>';
     }
 }
 
@@ -1919,7 +2188,11 @@ function cerrarCronometro() {
 /**
  * Inicializa todos los eventos del cronómetro flotante.
  */
+let _cronometroInicializado = false;
 function inicializarCronometro() {
+    if (_cronometroInicializado) return;
+    _cronometroInicializado = true;
+
     const btnPausar = document.getElementById('btn-cronometro-pausar');
     if (btnPausar) btnPausar.addEventListener('click', alternarPausaCronometro);
 
@@ -1953,23 +2226,22 @@ function inicializarCronometro() {
  */
 function obtenerPesoInicialSugerido(ejercicio, tipoSerie, marcas1RM) {
     const tipo1rm = obtenerTipo1RM(ejercicio.categoria);
-    const rm = tipo1rm ? (marcas1RM[tipo1rm] || 0) : 0;
+    const rm = tipo1rm ? obtenerRMNumero(marcas1RM, tipo1rm) : 0;
 
     if (rm > 0) {
         if (tipoSerie === 'warmup') {
             return Math.max(20, Math.round((rm * 0.5) / 2.5) * 2.5);
         } else if (tipoSerie === 'topset') {
             return Math.max(20, Math.round((rm * 0.8) / 2.5) * 2.5);
+        } else if (tipoSerie === 'plana') {
+            return Math.max(20, Math.round((rm * 0.75) / 2.5) * 2.5);
         } else if (tipoSerie === 'backoff') {
             return Math.max(20, Math.round((rm * 0.7) / 2.5) * 2.5);
         }
     }
 
-    // Valores por defecto seguros sin 1RM
-    if (ejercicio.categoria === 'squat') return tipoSerie === 'warmup' ? 60 : 100;
-    if (ejercicio.categoria === 'bench') return tipoSerie === 'warmup' ? 40 : 70;
-    if (ejercicio.categoria === 'deadlift') return tipoSerie === 'warmup' ? 70 : 120;
-    return 20; // Accesorios con mancuerna o barra ligera
+    // Si el usuario aún no tiene marcas o es un accesorio: barra olímpica estándar (20 kg)
+    return 20;
 }
 
 /**
@@ -1980,9 +2252,9 @@ function actualizarPorcentajeBloque(bloqueElemento, ejercicioCategoria, marcas1R
     const etiquetaPct = bloqueElemento.querySelector('.ejercicio-porcentaje');
     if (!etiquetaPct || !tipo1rm) return;
 
-    const rm = marcas1RM[tipo1rm] || 0;
+    const rm = obtenerRMNumero(marcas1RM, tipo1rm);
     if (rm <= 0) {
-        etiquetaPct.textContent = '';
+        etiquetaPct.textContent = '--%';
         return;
     }
 
@@ -2047,18 +2319,20 @@ iniciarEntrenamiento = function(rutinaId) {
         };
 
         const tipo1rm = obtenerTipo1RM(ejInfo.categoria);
-        const tiene1RM = tipo1rm && marcas1RM[tipo1rm] > 0;
+        const rmVal = tipo1rm ? obtenerRMNumero(marcas1RM, tipo1rm) : 0;
+        const texto1RMInicial = rmVal > 0 ? `@ 1RM: ${rmVal} kg` : (tipo1rm ? '--%' : '');
 
         // Construir tarjetas para cada serie
         const seriesHtml = (ejConfig.series || []).map((serie, indexSerie) => {
             const esTopSet = serie.tipo === 'topset';
             const esWarmup = serie.tipo === 'warmup';
-            const claseCard = esTopSet ? 'serie-topset' : (esWarmup ? 'serie-warmup' : 'serie-backoff');
-            const etiquetaTipo = esTopSet ? 'Top Set' : (esWarmup ? 'Warm-up' : 'Back-off');
+            const esPlana = serie.tipo === 'plana';
+            const claseCard = esTopSet ? 'serie-topset' : (esWarmup ? 'serie-warmup' : (esPlana ? 'serie-plana' : 'serie-backoff'));
+            const etiquetaTipo = esTopSet ? 'Top Set' : (esWarmup ? 'Warm-up' : (esPlana ? 'Plana' : 'Back-off'));
 
             const pesoSugerido = obtenerPesoInicialSugerido(ejInfo, serie.tipo, marcas1RM);
-            const repsSugeridas = serie.repsObjetivo || (esTopSet ? 3 : 5);
-            const rpeSugerido = serie.rpeObjetivo || (esTopSet ? 8 : 6);
+            const repsSugeridas = serie.repsObjetivo || (esTopSet ? 3 : (esPlana ? 8 : 5));
+            const rpeSugerido = serie.rpeObjetivo || (esTopSet ? 8 : (esPlana ? 8 : 6));
 
             return `
                 <div class="serie-card ${claseCard}" data-ej-index="${indexEj}" data-serie-index="${indexSerie}" data-tipo="${serie.tipo}">
@@ -2101,7 +2375,7 @@ iniciarEntrenamiento = function(rutinaId) {
             <div class="bloque-ejercicio" data-ej-id="${ejInfo.id}" data-categoria="${ejInfo.categoria}">
                 <div class="bloque-ejercicio-header">
                     <h2 class="ejercicio-nombre">${indexEj + 1}. ${ejInfo.nombre}</h2>
-                    <span class="ejercicio-porcentaje">${tiene1RM ? `@ 1RM: ${marcas1RM[tipo1rm]} kg` : ''}</span>
+                    <span class="ejercicio-porcentaje">${texto1RMInicial}</span>
                 </div>
                 <div class="series-lista">
                     ${seriesHtml}
@@ -2124,7 +2398,11 @@ iniciarEntrenamiento = function(rutinaId) {
 // C. DELEGACIÓN DE EVENTOS EN EL ENTRENAMIENTO ACTIVO
 // ------------------------------------------------------------
 
+let _workoutEventsInicializados = false;
 function inicializarEventosEntrenamientoActivo() {
+    if (_workoutEventsInicializados) return;
+    _workoutEventsInicializados = true;
+
     const contenedor = document.getElementById('contenido-entrenamiento');
     if (!contenedor) return;
 
@@ -2282,12 +2560,21 @@ function guardarSesionEnHistorial(ejercicios, seriesCompletadas, volumenKg) {
     historial.unshift(nuevaSesion); // Sesión más reciente al principio
     guardarHistorial(historial);
 
+    // Calcular y actualizar marcas 1RM automáticamente a partir de la sesión
+    const nuevosRecords = calcularYActualizar1RM(nuevaSesion);
+
     cerrarCronometro();
 
-    mostrarToast(`SESIÓN FINALIZADA · VOLUMEN: ${nuevaSesion.volumenTotalKg} KG`);
+    if (nuevosRecords && nuevosRecords.length > 0) {
+        mostrarToast(`NUEVO RÉCORD EN ${nuevosRecords.join(' · ')}`);
+    } else {
+        mostrarToast(`SESIÓN FINALIZADA · VOLUMEN: ${nuevaSesion.volumenTotalKg} KG`);
+    }
 
     // Actualizar vistas
     renderizarHistorial();
+    renderizar1RM();
+    actualizarTabla1RM();
 
     // Activar pestaña Historial dentro de la vista Historial
     const tabs = document.querySelectorAll('.tab');
@@ -2336,8 +2623,8 @@ abrirDetalleSesion = function(sesionId) {
 
         (sesion.ejercicios || []).forEach(ej => {
             const seriesHtml = (ej.series || []).map((serie, idx) => {
-                const tipoClase = serie.tipo === 'topset' ? 'serie-topset' : (serie.tipo === 'warmup' ? 'serie-warmup' : 'serie-backoff');
-                const tipoTexto = serie.tipo === 'topset' ? 'Top Set' : (serie.tipo === 'warmup' ? 'Warm-up' : 'Back-off');
+                const tipoClase = serie.tipo === 'topset' ? 'serie-topset' : (serie.tipo === 'warmup' ? 'serie-warmup' : (serie.tipo === 'plana' ? 'serie-plana' : 'serie-backoff'));
+                const tipoTexto = serie.tipo === 'topset' ? 'Top Set' : (serie.tipo === 'warmup' ? 'Warm-up' : (serie.tipo === 'plana' ? 'Plana' : 'Back-off'));
                 const estadoIcono = serie.completada ? 'OK' : '--';
                 const estadoColor = serie.completada ? 'var(--verde)' : 'var(--gris-medio)';
 
@@ -2381,7 +2668,11 @@ abrirDetalleSesion = function(sesionId) {
 /**
  * Inicializa los eventos del modal de detalle de sesión.
  */
+let _detalleSesionInicializado = false;
 function inicializarModalDetalleSesion() {
+    if (_detalleSesionInicializado) return;
+    _detalleSesionInicializado = true;
+
     const modal = document.getElementById('modal-detalle-sesion');
     const btnCerrar = document.getElementById('btn-cerrar-modal-detalle');
     const btnEliminar = document.getElementById('btn-eliminar-sesion');
@@ -2413,18 +2704,13 @@ function inicializarModalDetalleSesion() {
 }
 
 // ------------------------------------------------------------
-// F. INICIALIZACIÓN FINAL DEL BLOQUE 3
+// F. INICIALIZACIÓN FINAL DEL BLOQUE 3 (UNIFICADA)
 // ------------------------------------------------------------
 
 function inicializarParte3() {
     inicializarCronometro();
     inicializarEventosEntrenamientoActivo();
     inicializarModalDetalleSesion();
-}
-
-// Ejecutar inicialización si el DOM ya está listo
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    inicializarParte3();
 }
 
 
@@ -2517,27 +2803,6 @@ function inicializarDelegacionHistorial() {
 }
 
 /**
- * Vincula los inputs de 1RM para actualizar la tabla de porcentajes en tiempo real.
- */
-function inicializarLiveUpdate1RM() {
-    ['input-1rm-squat', 'input-1rm-bench', 'input-1rm-deadlift'].forEach(id => {
-        const input = document.getElementById(id);
-        if (input) {
-            input.addEventListener('input', () => {
-                const tipo = id.replace('input-1rm-', '');
-                const selectCalc = document.getElementById('calc-ejercicio');
-                if (selectCalc && selectCalc.value === tipo) {
-                    const marcas = obtenerMarcas1RM();
-                    marcas[tipo] = parseFloat(input.value) || 0;
-                    guardarMarcas1RM(marcas);
-                    actualizarTabla1RM();
-                }
-            });
-        }
-    });
-}
-
-/**
  * INICIALIZACIÓN DEFINITIVA Y UNIFICADA (initApp).
  * Se encarga de arrancar todos los módulos de las Partes 1, 2 y 3 sin condiciones de carrera.
  */
@@ -2556,7 +2821,6 @@ async function initApp() {
 
     // 3. Módulo 1RM y calculadora
     inicializar1RM();
-    inicializarLiveUpdate1RM();
 
     // 4. Módulo Constructor de Rutinas (Parte 2)
     if (typeof inicializarConstructor === 'function') {

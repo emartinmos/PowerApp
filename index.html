@@ -197,55 +197,20 @@
             <!-- Tab: 1RM y Marcas Personales -->
             <div id="tab-1rm" class="tab-contenido">
                 <div class="seccion-1rm">
-                    <h2 class="seccion-titulo">Marcas Personales (1RM)</h2>
-                    <p class="seccion-desc">Introduce tus 1RM actuales para calcular porcentajes durante el entrenamiento.</p>
-
-                    <div class="tarjeta-1rm">
-                        <div class="tarjeta-1rm-header">
-                            <span class="badge-cat sq">SQ</span>
-                            <h3>SENTADILLA (SQUAT)</h3>
+                    <div class="seccion-1rm-header">
+                        <div>
+                            <h2 class="seccion-titulo">MARCAS PERSONALES (1RM)</h2>
+                            <p class="seccion-desc">Récords automáticos calculados a partir de tus sesiones completadas.</p>
                         </div>
-                        <div class="tarjeta-1rm-input">
-                            <div class="stepper stepper-grande">
-                                <button class="stepper-btn stepper-menos" data-step="-2.5" data-target="input-1rm-squat">−</button>
-                                <input type="number" id="input-1rm-squat" class="input-1rm" value="0" step="2.5" min="0" inputmode="decimal">
-                                <button class="stepper-btn stepper-mas" data-step="2.5" data-target="input-1rm-squat">+</button>
-                            </div>
-                            <span class="unidad">kg</span>
+                        <div class="seccion-1rm-acciones">
+                            <button class="btn btn-danger btn-mini-action" id="btn-reset-1rm">RESETEAR A 0</button>
                         </div>
                     </div>
 
-                    <div class="tarjeta-1rm">
-                        <div class="tarjeta-1rm-header">
-                            <span class="badge-cat bp">BP</span>
-                            <h3>PRESS DE BANCA (BENCH)</h3>
-                        </div>
-                        <div class="tarjeta-1rm-input">
-                            <div class="stepper stepper-grande">
-                                <button class="stepper-btn stepper-menos" data-step="-2.5" data-target="input-1rm-bench">−</button>
-                                <input type="number" id="input-1rm-bench" class="input-1rm" value="0" step="2.5" min="0" inputmode="decimal">
-                                <button class="stepper-btn stepper-mas" data-step="2.5" data-target="input-1rm-bench">+</button>
-                            </div>
-                            <span class="unidad">kg</span>
-                        </div>
+                    <!-- Cuadrícula de Tarjetas Técnicas 1RM: SQ, BP, DL, TOTAL -->
+                    <div id="grid-tarjetas-1rm" class="grid-tarjetas-1rm">
+                        <!-- Generado dinámicamente por renderizar1RM() -->
                     </div>
-
-                    <div class="tarjeta-1rm">
-                        <div class="tarjeta-1rm-header">
-                            <span class="badge-cat dl">DL</span>
-                            <h3>PESO MUERTO (DEADLIFT)</h3>
-                        </div>
-                        <div class="tarjeta-1rm-input">
-                            <div class="stepper stepper-grande">
-                                <button class="stepper-btn stepper-menos" data-step="-2.5" data-target="input-1rm-deadlift">−</button>
-                                <input type="number" id="input-1rm-deadlift" class="input-1rm" value="0" step="2.5" min="0" inputmode="decimal">
-                                <button class="stepper-btn stepper-mas" data-step="2.5" data-target="input-1rm-deadlift">+</button>
-                            </div>
-                            <span class="unidad">kg</span>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary btn-block" id="btn-guardar-1rm">GUARDAR 1RM</button>
                 </div>
 
                 <div class="seccion-1rm">
@@ -302,53 +267,102 @@
                 <button class="btn-cerrar-modal" id="btn-cerrar-modal-config" aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="modal-body">
-                <div class="config-grupo">
-                    <h3 class="config-label">Series de Calentamiento (Warm-up)</h3>
-                    <div class="stepper">
-                        <button class="stepper-btn stepper-menos" data-step="-1" data-target="input-warmup-series">−</button>
-                        <input type="number" id="input-warmup-series" class="input-config" value="2" min="0" max="10" step="1" inputmode="numeric">
-                        <button class="stepper-btn stepper-mas" data-step="1" data-target="input-warmup-series">+</button>
+                <!-- Selector / Switch de Formato de Series -->
+                <div class="config-grupo-switch">
+                    <label class="config-label">FORMATO DE SERIES</label>
+                    <div class="switch-formato-series" id="selector-formato-series">
+                        <button type="button" class="btn-formato activo" data-formato="topset">TOP SET + BACK-OFF</button>
+                        <button type="button" class="btn-formato" data-formato="planas">SERIES PLANAS</button>
                     </div>
                 </div>
-                <div class="config-grupo">
-                    <h3 class="config-label">Top Sets</h3>
-                    <div class="stepper">
-                        <button class="stepper-btn stepper-menos" data-step="-1" data-target="input-top-series">−</button>
-                        <input type="number" id="input-top-series" class="input-config" value="1" min="0" max="10" step="1" inputmode="numeric">
-                        <button class="stepper-btn stepper-mas" data-step="1" data-target="input-top-series">+</button>
+
+                <!-- Panel Formato: Top Set + Back-off -->
+                <div id="panel-formato-topset" class="panel-formato">
+                    <div class="config-grupo">
+                        <h3 class="config-label">Series de Calentamiento (Warm-up)</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-warmup-series">−</button>
+                            <input type="number" id="input-warmup-series" class="input-config" value="2" min="0" max="10" step="1" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-warmup-series">+</button>
+                        </div>
+                    </div>
+                    <div class="config-grupo">
+                        <h3 class="config-label">Top Sets</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-top-series">−</button>
+                            <input type="number" id="input-top-series" class="input-config" value="1" min="0" max="10" step="1" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-top-series">+</button>
+                        </div>
+                    </div>
+                    <div class="config-grupo">
+                        <h3 class="config-label">Back-off Sets</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-backoff-series">−</button>
+                            <input type="number" id="input-backoff-series" class="input-config" value="3" min="0" max="10" step="1" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-backoff-series">+</button>
+                        </div>
+                    </div>
+                    <hr class="separador">
+                    <div class="config-grupo">
+                        <h3 class="config-label">Reps Objetivo (Top Set)</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-reps-objetivo">−</button>
+                            <input type="number" id="input-reps-objetivo" class="input-config" value="3" min="1" max="20" step="1" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-reps-objetivo">+</button>
+                        </div>
+                    </div>
+                    <div class="config-grupo">
+                        <h3 class="config-label">RPE Objetivo</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-0.5" data-target="input-rpe-objetivo">−</button>
+                            <input type="number" id="input-rpe-objetivo" class="input-config" value="8" min="5" max="10" step="0.5" inputmode="decimal">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="0.5" data-target="input-rpe-objetivo">+</button>
+                        </div>
+                    </div>
+                    <div class="config-grupo">
+                        <h3 class="config-label">Reps Objetivo (Back-off)</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-reps-backoff">−</button>
+                            <input type="number" id="input-reps-backoff" class="input-config" value="5" min="1" max="20" step="1" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-reps-backoff">+</button>
+                        </div>
                     </div>
                 </div>
-                <div class="config-grupo">
-                    <h3 class="config-label">Back-off Sets</h3>
-                    <div class="stepper">
-                        <button class="stepper-btn stepper-menos" data-step="-1" data-target="input-backoff-series">−</button>
-                        <input type="number" id="input-backoff-series" class="input-config" value="3" min="0" max="10" step="1" inputmode="numeric">
-                        <button class="stepper-btn stepper-mas" data-step="1" data-target="input-backoff-series">+</button>
+
+                <!-- Panel Formato: Series Planas -->
+                <div id="panel-formato-planas" class="panel-formato oculto">
+                    <div class="config-grupo">
+                        <h3 class="config-label">Series de Calentamiento (Warm-up)</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-planas-warmup">−</button>
+                            <input type="number" id="input-planas-warmup" class="input-config" value="1" min="0" max="10" step="1" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-planas-warmup">+</button>
+                        </div>
                     </div>
-                </div>
-                <hr class="separador">
-                <div class="config-grupo">
-                    <h3 class="config-label">Reps Objetivo (Top Set)</h3>
-                    <div class="stepper">
-                        <button class="stepper-btn stepper-menos" data-step="-1" data-target="input-reps-objetivo">−</button>
-                        <input type="number" id="input-reps-objetivo" class="input-config" value="3" min="1" max="20" step="1" inputmode="numeric">
-                        <button class="stepper-btn stepper-mas" data-step="1" data-target="input-reps-objetivo">+</button>
+                    <div class="config-grupo">
+                        <h3 class="config-label">Series Efectivas Planas</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-planas-series">−</button>
+                            <input type="number" id="input-planas-series" class="input-config" value="3" min="1" max="15" step="1" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-planas-series">+</button>
+                        </div>
                     </div>
-                </div>
-                <div class="config-grupo">
-                    <h3 class="config-label">RPE Objetivo</h3>
-                    <div class="stepper">
-                        <button class="stepper-btn stepper-menos" data-step="-0.5" data-target="input-rpe-objetivo">−</button>
-                        <input type="number" id="input-rpe-objetivo" class="input-config" value="8" min="5" max="10" step="0.5" inputmode="decimal">
-                        <button class="stepper-btn stepper-mas" data-step="0.5" data-target="input-rpe-objetivo">+</button>
+                    <hr class="separador">
+                    <div class="config-grupo">
+                        <h3 class="config-label">Repeticiones Objetivo</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-planas-reps">−</button>
+                            <input type="number" id="input-planas-reps" class="input-config" value="8" min="1" max="30" step="1" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-planas-reps">+</button>
+                        </div>
                     </div>
-                </div>
-                <div class="config-grupo">
-                    <h3 class="config-label">Reps Objetivo (Back-off)</h3>
-                    <div class="stepper">
-                        <button class="stepper-btn stepper-menos" data-step="-1" data-target="input-reps-backoff">−</button>
-                        <input type="number" id="input-reps-backoff" class="input-config" value="5" min="1" max="20" step="1" inputmode="numeric">
-                        <button class="stepper-btn stepper-mas" data-step="1" data-target="input-reps-backoff">+</button>
+                    <div class="config-grupo">
+                        <h3 class="config-label">RPE Objetivo</h3>
+                        <div class="stepper">
+                            <button type="button" class="stepper-btn stepper-menos" data-step="-0.5" data-target="input-planas-rpe">−</button>
+                            <input type="number" id="input-planas-rpe" class="input-config" value="8" min="5" max="10" step="0.5" inputmode="decimal">
+                            <button type="button" class="stepper-btn stepper-mas" data-step="0.5" data-target="input-planas-rpe">+</button>
+                        </div>
                     </div>
                 </div>
             </div>
