@@ -5,52 +5,52 @@
     {
       "id": "squat",
       "nombre": "Sentadilla (Squat)",
-      "icono": "🦵"
+      "icono": "SQ"
     },
     {
       "id": "bench",
       "nombre": "Press de Banca (Bench Press)",
-      "icono": "🏋️"
+      "icono": "BP"
     },
     {
       "id": "deadlift",
       "nombre": "Peso Muerto (Deadlift)",
-      "icono": "💀"
+      "icono": "DL"
     },
     {
       "id": "accesorio_pierna",
       "nombre": "Accesorios - Pierna",
-      "icono": "🦿"
+      "icono": "LEG"
     },
     {
       "id": "accesorio_espalda",
       "nombre": "Accesorios - Espalda",
-      "icono": "🔙"
+      "icono": "BACK"
     },
     {
       "id": "accesorio_pecho",
       "nombre": "Accesorios - Pecho",
-      "icono": "💪"
+      "icono": "CHEST"
     },
     {
       "id": "accesorio_hombro",
       "nombre": "Accesorios - Hombro",
-      "icono": "🎯"
+      "icono": "SHLD"
     },
     {
       "id": "accesorio_brazo",
       "nombre": "Accesorios - Brazo",
-      "icono": "💪"
+      "icono": "ARM"
     },
     {
       "id": "accesorio_core",
       "nombre": "Accesorios - Core",
-      "icono": "🧱"
+      "icono": "CORE"
     },
     {
       "id": "accesorio_gluteo",
       "nombre": "Accesorios - Glúteo",
-      "icono": "🍑"
+      "icono": "GLUTE"
     }
   ],
   "ejercicios": [
@@ -58,8 +58,15 @@
       "id": "sq_high_bar",
       "nombre": "Sentadilla Barra Alta (High Bar)",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "erectores espinales", "core"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "erectores espinales",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": true,
       "notas": "Barra apoyada sobre trapecios superiores. Mayor rango de movimiento y énfasis en cuádriceps."
@@ -68,8 +75,16 @@
       "id": "sq_low_bar",
       "nombre": "Sentadilla Barra Baja (Low Bar)",
       "categoria": "squat",
-      "musculosPrincipales": ["glúteos", "isquiotibiales", "cuádriceps"],
-      "musculosSecundarios": ["erectores espinales", "core", "deltoides posterior"],
+      "musculosPrincipales": [
+        "glúteos",
+        "isquiotibiales",
+        "cuádriceps"
+      ],
+      "musculosSecundarios": [
+        "erectores espinales",
+        "core",
+        "deltoides posterior"
+      ],
       "equipamiento": "barra",
       "esBasico": true,
       "notas": "Barra apoyada sobre deltoides posteriores. Permite mover más peso. Variante más común en competición."
@@ -78,8 +93,15 @@
       "id": "sq_pausa",
       "nombre": "Sentadilla con Pausa (Paused Squat)",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "erectores espinales", "core"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "erectores espinales",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Pausa de 2-3 segundos en el punto más bajo. Mejora fuerza en el agujero y control postural."
@@ -88,8 +110,15 @@
       "id": "sq_tempo",
       "nombre": "Tempo Squat",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "erectores espinales", "core"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "erectores espinales",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Excéntrica controlada (3-5 segundos bajando). Excelente para mejorar control y tiempo bajo tensión."
@@ -98,8 +127,15 @@
       "id": "sq_pin",
       "nombre": "Pin Squat",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "erectores espinales", "core"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "erectores espinales",
+        "core"
+      ],
       "equipamiento": "barra, rack con pines",
       "esBasico": false,
       "notas": "La barra se apoya en los pines de seguridad en el punto inferior. Elimina el reflejo de estiramiento, trabaja fuerza concéntrica pura."
@@ -108,8 +144,16 @@
       "id": "sq_ssb",
       "nombre": "Sentadilla con Safety Squat Bar (SSB)",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "erectores espinales", "core", "trapecios"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "erectores espinales",
+        "core",
+        "trapecios"
+      ],
       "equipamiento": "safety squat bar",
       "esBasico": false,
       "notas": "Barra con almohadilla y asas. Reduce estrés en hombros y muñecas. Mayor demanda de espalda alta y core."
@@ -118,8 +162,15 @@
       "id": "sq_frontal",
       "nombre": "Sentadilla Frontal (Front Squat)",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps"],
-      "musculosSecundarios": ["glúteos", "core", "espalda alta", "deltoides anteriores"],
+      "musculosPrincipales": [
+        "cuádriceps"
+      ],
+      "musculosSecundarios": [
+        "glúteos",
+        "core",
+        "espalda alta",
+        "deltoides anteriores"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Barra apoyada en deltoides anteriores con agarre limpio o cruzado. Gran énfasis en cuádriceps y torso erguido."
@@ -128,8 +179,15 @@
       "id": "sq_box",
       "nombre": "Box Squat (Sentadilla al Cajón)",
       "categoria": "squat",
-      "musculosPrincipales": ["glúteos", "isquiotibiales", "cuádriceps"],
-      "musculosSecundarios": ["erectores espinales", "core"],
+      "musculosPrincipales": [
+        "glúteos",
+        "isquiotibiales",
+        "cuádriceps"
+      ],
+      "musculosSecundarios": [
+        "erectores espinales",
+        "core"
+      ],
       "equipamiento": "barra, cajón",
       "esBasico": false,
       "notas": "Sentarse brevemente en un cajón en el punto inferior. Trabaja fuerza concéntrica y profundidad consistente."
@@ -138,8 +196,13 @@
       "id": "sq_belt",
       "nombre": "Belt Squat",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales"
+      ],
       "equipamiento": "máquina belt squat o cinturón con cadena",
       "esBasico": false,
       "notas": "Carga suspendida de la cadera, sin compresión espinal. Ideal para volumen extra sin fatigar la espalda."
@@ -148,8 +211,15 @@
       "id": "sq_anderson",
       "nombre": "Anderson Squat",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "erectores espinales", "core"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "erectores espinales",
+        "core"
+      ],
       "equipamiento": "barra, rack",
       "esBasico": false,
       "notas": "Se inicia desde abajo con la barra apoyada en los pines. Trabaja fuerza desde el punto de máxima dificultad sin estiramiento previo."
@@ -158,8 +228,14 @@
       "id": "sq_goblet",
       "nombre": "Goblet Squat",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["core", "deltoides anteriores"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "core",
+        "deltoides anteriores"
+      ],
       "equipamiento": "mancuerna o kettlebell",
       "esBasico": false,
       "notas": "Sentadilla con mancuerna o kettlebell sujeta frente al pecho. Ideal para calentamiento y aprendizaje del patrón."
@@ -168,19 +244,31 @@
       "id": "sq_bulgara",
       "nombre": "Sentadilla Búlgara (Bulgarian Split Squat)",
       "categoria": "squat",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "core", "estabilizadores de cadera"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "core",
+        "estabilizadores de cadera"
+      ],
       "equipamiento": "mancuernas o barra, banco",
       "esBasico": false,
       "notas": "Zancada con pie trasero elevado en un banco. Trabaja unilateralmente, corrige desbalances."
     },
-
     {
       "id": "bp_competicion",
       "nombre": "Press de Banca Competición (Pausa)",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior", "dorsal ancho"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior",
+        "dorsal ancho"
+      ],
       "equipamiento": "barra, banco plano",
       "esBasico": true,
       "notas": "Barra desciende al pecho con pausa completa (sin rebote) antes de empujar. Estándar de competición IPF."
@@ -189,8 +277,14 @@
       "id": "bp_tng",
       "nombre": "Press de Banca Touch and Go (TNG)",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior", "dorsal ancho"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior",
+        "dorsal ancho"
+      ],
       "equipamiento": "barra, banco plano",
       "esBasico": true,
       "notas": "Sin pausa en el pecho: se toca y se empuja directamente. Permite más volumen y carga ligeramente mayor."
@@ -199,8 +293,13 @@
       "id": "bp_close_grip",
       "nombre": "Press de Banca Agarre Cerrado (Close Grip)",
       "categoria": "bench",
-      "musculosPrincipales": ["tríceps", "pectoral mayor"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "tríceps",
+        "pectoral mayor"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "barra, banco plano",
       "esBasico": false,
       "notas": "Manos a la anchura de los hombros o ligeramente menos. Mayor énfasis en tríceps. Excelente accesorio para lockout."
@@ -209,8 +308,13 @@
       "id": "bp_wide_grip",
       "nombre": "Press de Banca Agarre Ancho (Wide Grip)",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor"],
-      "musculosSecundarios": ["deltoides anterior", "tríceps"],
+      "musculosPrincipales": [
+        "pectoral mayor"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior",
+        "tríceps"
+      ],
       "equipamiento": "barra, banco plano",
       "esBasico": false,
       "notas": "Agarre más ancho que el de competición. Mayor recorrido del pectoral, menor participación del tríceps."
@@ -219,8 +323,14 @@
       "id": "bp_larsen",
       "nombre": "Larsen Press",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior", "core"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior",
+        "core"
+      ],
       "equipamiento": "barra, banco plano",
       "esBasico": false,
       "notas": "Pies elevados del suelo (piernas extendidas sin apoyar). Elimina el drive de piernas, aisla el tren superior y mejora la estabilidad del torso."
@@ -229,8 +339,13 @@
       "id": "bp_spoto",
       "nombre": "Spoto Press",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "barra, banco plano",
       "esBasico": false,
       "notas": "Se detiene 2-3 cm antes de tocar el pecho. Aumenta el tiempo bajo tensión y elimina el rebote, fortaleciendo el punto de partida."
@@ -239,8 +354,13 @@
       "id": "bp_floor",
       "nombre": "Floor Press (Press de Suelo)",
       "categoria": "bench",
-      "musculosPrincipales": ["tríceps", "pectoral mayor"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "tríceps",
+        "pectoral mayor"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "barra o mancuernas",
       "esBasico": false,
       "notas": "Tumbado en el suelo. Los codos tocan el suelo limitando el recorrido. Enfocado en lockout y fuerza de tríceps."
@@ -249,8 +369,13 @@
       "id": "bp_pin",
       "nombre": "Pin Press (Press desde Pines)",
       "categoria": "bench",
-      "musculosPrincipales": ["tríceps", "pectoral mayor"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "tríceps",
+        "pectoral mayor"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "barra, banco plano, rack con pines",
       "esBasico": false,
       "notas": "Barra se apoya en pines a una altura determinada. Trabaja rangos parciales específicos y fuerza en sticking points."
@@ -259,8 +384,13 @@
       "id": "bp_inclinado",
       "nombre": "Press de Banca Inclinado con Barra",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor (porción clavicular)", "deltoides anterior"],
-      "musculosSecundarios": ["tríceps"],
+      "musculosPrincipales": [
+        "pectoral mayor (porción clavicular)",
+        "deltoides anterior"
+      ],
+      "musculosSecundarios": [
+        "tríceps"
+      ],
       "equipamiento": "barra, banco inclinado",
       "esBasico": false,
       "notas": "Banco inclinado a 30-45°. Mayor énfasis en pecho superior y deltoides anterior."
@@ -269,8 +399,14 @@
       "id": "bp_inclinado_db",
       "nombre": "Press de Banca Inclinado con Mancuernas",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor (porción clavicular)", "deltoides anterior"],
-      "musculosSecundarios": ["tríceps", "estabilizadores de hombro"],
+      "musculosPrincipales": [
+        "pectoral mayor (porción clavicular)",
+        "deltoides anterior"
+      ],
+      "musculosSecundarios": [
+        "tríceps",
+        "estabilizadores de hombro"
+      ],
       "equipamiento": "mancuernas, banco inclinado",
       "esBasico": false,
       "notas": "Mayor rango de movimiento que con barra. Mejor activación del pecho superior y trabajo unilateral."
@@ -279,8 +415,14 @@
       "id": "bp_db_plano",
       "nombre": "Press de Banca con Mancuernas (Plano)",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior", "estabilizadores de hombro"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior",
+        "estabilizadores de hombro"
+      ],
       "equipamiento": "mancuernas, banco plano",
       "esBasico": false,
       "notas": "Mayor rango de movimiento y trabajo de estabilizadores. Corrige desbalances entre lados."
@@ -289,8 +431,13 @@
       "id": "bp_slingshot",
       "nombre": "Slingshot Bench Press",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "barra, banco plano, slingshot",
       "esBasico": false,
       "notas": "Banda elástica (Slingshot) que asiste en la parte inferior del movimiento. Permite sobrecargar el lockout con mayor peso."
@@ -299,8 +446,13 @@
       "id": "bp_tempo",
       "nombre": "Tempo Bench Press",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "barra, banco plano",
       "esBasico": false,
       "notas": "Excéntrica controlada de 3-5 segundos. Mejora control del arco, trayectoria de barra y tiempo bajo tensión."
@@ -309,19 +461,32 @@
       "id": "bp_banda",
       "nombre": "Press de Banca con Bandas",
       "categoria": "bench",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "barra, banco plano, bandas elásticas",
       "esBasico": false,
       "notas": "Bandas añaden resistencia acomodada: más duro arriba, más fácil abajo. Mejora velocidad y lockout."
     },
-
     {
       "id": "dl_convencional",
       "nombre": "Peso Muerto Convencional",
       "categoria": "deadlift",
-      "musculosPrincipales": ["erectores espinales", "glúteos", "isquiotibiales"],
-      "musculosSecundarios": ["cuádriceps", "trapecios", "antebrazos", "core"],
+      "musculosPrincipales": [
+        "erectores espinales",
+        "glúteos",
+        "isquiotibiales"
+      ],
+      "musculosSecundarios": [
+        "cuádriceps",
+        "trapecios",
+        "antebrazos",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": true,
       "notas": "Pies a la anchura de los hombros, manos por fuera. Mayor demanda de espalda baja y cadena posterior."
@@ -330,8 +495,17 @@
       "id": "dl_sumo",
       "nombre": "Peso Muerto Sumo",
       "categoria": "deadlift",
-      "musculosPrincipales": ["glúteos", "cuádriceps", "aductores"],
-      "musculosSecundarios": ["isquiotibiales", "erectores espinales", "trapecios", "antebrazos"],
+      "musculosPrincipales": [
+        "glúteos",
+        "cuádriceps",
+        "aductores"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "erectores espinales",
+        "trapecios",
+        "antebrazos"
+      ],
       "equipamiento": "barra",
       "esBasico": true,
       "notas": "Piernas muy abiertas, manos entre las rodillas. Torso más vertical, menor recorrido. Muy usado en competición."
@@ -340,8 +514,16 @@
       "id": "dl_pausa_despegue",
       "nombre": "Peso Muerto con Pausa (Tras el Despegue)",
       "categoria": "deadlift",
-      "musculosPrincipales": ["erectores espinales", "glúteos", "isquiotibiales"],
-      "musculosSecundarios": ["cuádriceps", "trapecios", "core"],
+      "musculosPrincipales": [
+        "erectores espinales",
+        "glúteos",
+        "isquiotibiales"
+      ],
+      "musculosSecundarios": [
+        "cuádriceps",
+        "trapecios",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Pausa de 2-3 segundos justo después de despegar la barra del suelo (2-5 cm). Fortalece la posición inicial y evita tirones."
@@ -350,8 +532,16 @@
       "id": "dl_pausa_rodilla",
       "nombre": "Peso Muerto con Pausa (Bajo Rodilla)",
       "categoria": "deadlift",
-      "musculosPrincipales": ["erectores espinales", "glúteos", "isquiotibiales"],
-      "musculosSecundarios": ["cuádriceps", "trapecios", "core"],
+      "musculosPrincipales": [
+        "erectores espinales",
+        "glúteos",
+        "isquiotibiales"
+      ],
+      "musculosSecundarios": [
+        "cuádriceps",
+        "trapecios",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Pausa de 2-3 segundos a la altura de la rodilla o justo debajo. Mejora el mantenimiento de la posición de espalda."
@@ -360,8 +550,17 @@
       "id": "dl_deficit",
       "nombre": "Peso Muerto en Déficit",
       "categoria": "deadlift",
-      "musculosPrincipales": ["erectores espinales", "glúteos", "isquiotibiales", "cuádriceps"],
-      "musculosSecundarios": ["trapecios", "antebrazos", "core"],
+      "musculosPrincipales": [
+        "erectores espinales",
+        "glúteos",
+        "isquiotibiales",
+        "cuádriceps"
+      ],
+      "musculosSecundarios": [
+        "trapecios",
+        "antebrazos",
+        "core"
+      ],
       "equipamiento": "barra, plataforma o discos para elevar",
       "esBasico": false,
       "notas": "Se sube a una plataforma de 2-5 cm para aumentar el recorrido. Mejora la fuerza en el despegue."
@@ -370,8 +569,15 @@
       "id": "dl_rack_pull",
       "nombre": "Rack Pull / Block Pull",
       "categoria": "deadlift",
-      "musculosPrincipales": ["erectores espinales", "glúteos", "trapecios"],
-      "musculosSecundarios": ["isquiotibiales", "antebrazos"],
+      "musculosPrincipales": [
+        "erectores espinales",
+        "glúteos",
+        "trapecios"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "antebrazos"
+      ],
       "equipamiento": "barra, rack con pines o bloques",
       "esBasico": false,
       "notas": "Barra parte de pines o bloques (altura de rodilla o superior). Permite sobrecargar el lockout con más peso."
@@ -380,8 +586,14 @@
       "id": "dl_rdl",
       "nombre": "Peso Muerto Rumano (RDL)",
       "categoria": "deadlift",
-      "musculosPrincipales": ["isquiotibiales", "glúteos"],
-      "musculosSecundarios": ["erectores espinales", "core"],
+      "musculosPrincipales": [
+        "isquiotibiales",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "erectores espinales",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Se baja la barra con piernas casi extendidas (ligera flexión de rodilla) mediante hip hinge. Gran estiramiento de isquiotibiales."
@@ -390,8 +602,14 @@
       "id": "dl_sldl",
       "nombre": "Peso Muerto Piernas Rígidas (Stiff-Leg / SLDL)",
       "categoria": "deadlift",
-      "musculosPrincipales": ["isquiotibiales", "erectores espinales"],
-      "musculosSecundarios": ["glúteos", "core"],
+      "musculosPrincipales": [
+        "isquiotibiales",
+        "erectores espinales"
+      ],
+      "musculosSecundarios": [
+        "glúteos",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Similar al RDL pero con rodillas completamente bloqueadas y barra que parte del suelo. Mayor estiramiento y demanda lumbar."
@@ -400,8 +618,15 @@
       "id": "dl_rdl_db",
       "nombre": "RDL con Mancuernas",
       "categoria": "deadlift",
-      "musculosPrincipales": ["isquiotibiales", "glúteos"],
-      "musculosSecundarios": ["erectores espinales", "core", "antebrazos"],
+      "musculosPrincipales": [
+        "isquiotibiales",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "erectores espinales",
+        "core",
+        "antebrazos"
+      ],
       "equipamiento": "mancuernas",
       "esBasico": false,
       "notas": "Versión con mancuernas del RDL. Permite mayor rango de movimiento y trabajo independiente de cada lado."
@@ -410,8 +635,14 @@
       "id": "dl_rdl_unilateral",
       "nombre": "RDL Unilateral (Single Leg RDL)",
       "categoria": "deadlift",
-      "musculosPrincipales": ["isquiotibiales", "glúteos"],
-      "musculosSecundarios": ["core", "estabilizadores de cadera"],
+      "musculosPrincipales": [
+        "isquiotibiales",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "core",
+        "estabilizadores de cadera"
+      ],
       "equipamiento": "mancuerna o kettlebell",
       "esBasico": false,
       "notas": "RDL a una pierna. Trabaja equilibrio, estabilidad de cadera y corrige asimetrías."
@@ -420,8 +651,17 @@
       "id": "dl_snatch_grip",
       "nombre": "Peso Muerto Agarre de Arrancada (Snatch Grip)",
       "categoria": "deadlift",
-      "musculosPrincipales": ["erectores espinales", "trapecios", "isquiotibiales", "glúteos"],
-      "musculosSecundarios": ["cuádriceps", "antebrazos", "dorsales"],
+      "musculosPrincipales": [
+        "erectores espinales",
+        "trapecios",
+        "isquiotibiales",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "cuádriceps",
+        "antebrazos",
+        "dorsales"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Agarre muy ancho (como en arrancada). Mayor recorrido, gran demanda de espalda alta y trapecios."
@@ -430,19 +670,30 @@
       "id": "dl_tempo",
       "nombre": "Tempo Deadlift",
       "categoria": "deadlift",
-      "musculosPrincipales": ["erectores espinales", "glúteos", "isquiotibiales"],
-      "musculosSecundarios": ["cuádriceps", "core"],
+      "musculosPrincipales": [
+        "erectores espinales",
+        "glúteos",
+        "isquiotibiales"
+      ],
+      "musculosSecundarios": [
+        "cuádriceps",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Concéntrica o excéntrica controlada de 3-5 segundos. Mejora posición y control técnico."
     },
-
     {
       "id": "acc_prensa",
       "nombre": "Prensa de Piernas (Leg Press)",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales"
+      ],
       "equipamiento": "máquina prensa",
       "esBasico": false,
       "notas": "Excelente para acumular volumen de piernas sin estrés axial. Pies altos = más glúteo; pies bajos = más cuádriceps."
@@ -451,8 +702,12 @@
       "id": "acc_hack_squat",
       "nombre": "Hack Squat (Máquina)",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["cuádriceps"],
-      "musculosSecundarios": ["glúteos"],
+      "musculosPrincipales": [
+        "cuádriceps"
+      ],
+      "musculosSecundarios": [
+        "glúteos"
+      ],
       "equipamiento": "máquina hack squat",
       "esBasico": false,
       "notas": "Sentadilla en máquina con espalda apoyada. Énfasis en cuádriceps con mínima demanda de estabilización."
@@ -461,7 +716,9 @@
       "id": "acc_ext_cuad",
       "nombre": "Extensión de Cuádriceps (Leg Extension)",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["cuádriceps"],
+      "musculosPrincipales": [
+        "cuádriceps"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "máquina extensión",
       "esBasico": false,
@@ -471,8 +728,12 @@
       "id": "acc_curl_femoral",
       "nombre": "Curl Femoral (Leg Curl)",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["isquiotibiales"],
-      "musculosSecundarios": ["gemelos"],
+      "musculosPrincipales": [
+        "isquiotibiales"
+      ],
+      "musculosSecundarios": [
+        "gemelos"
+      ],
       "equipamiento": "máquina curl femoral",
       "esBasico": false,
       "notas": "Aislamiento de isquiotibiales. Versiones: tumbado, sentado o de pie. Fundamental para equilibrio cuádriceps/isquiotibiales."
@@ -481,7 +742,9 @@
       "id": "acc_curl_femoral_sentado",
       "nombre": "Curl Femoral Sentado (Seated Leg Curl)",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["isquiotibiales"],
+      "musculosPrincipales": [
+        "isquiotibiales"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "máquina curl femoral sentado",
       "esBasico": false,
@@ -491,8 +754,14 @@
       "id": "acc_zancada",
       "nombre": "Zancadas (Lunges)",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "core"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "core"
+      ],
       "equipamiento": "mancuernas o barra",
       "esBasico": false,
       "notas": "Trabajo unilateral de piernas. Variantes: estáticas, caminando, en reversa."
@@ -501,8 +770,14 @@
       "id": "acc_step_up",
       "nombre": "Step Up",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["cuádriceps", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "core"],
+      "musculosPrincipales": [
+        "cuádriceps",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "core"
+      ],
       "equipamiento": "cajón, mancuernas o barra",
       "esBasico": false,
       "notas": "Subida a cajón con una pierna. Trabajo unilateral funcional."
@@ -511,7 +786,9 @@
       "id": "acc_prensa_pantorrilla",
       "nombre": "Elevación de Gemelos en Prensa",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["gemelos (gastrocnemio y sóleo)"],
+      "musculosPrincipales": [
+        "gemelos (gastrocnemio y sóleo)"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "máquina prensa",
       "esBasico": false,
@@ -521,8 +798,12 @@
       "id": "acc_gemelo_sentado",
       "nombre": "Elevación de Gemelos Sentado",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["sóleo"],
-      "musculosSecundarios": ["gastrocnemio"],
+      "musculosPrincipales": [
+        "sóleo"
+      ],
+      "musculosSecundarios": [
+        "gastrocnemio"
+      ],
       "equipamiento": "máquina de gemelos sentado",
       "esBasico": false,
       "notas": "Énfasis en el sóleo al estar las rodillas flexionadas."
@@ -531,7 +812,9 @@
       "id": "acc_aductor",
       "nombre": "Máquina Aductores",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["aductores"],
+      "musculosPrincipales": [
+        "aductores"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "máquina aductores",
       "esBasico": false,
@@ -541,19 +824,26 @@
       "id": "acc_abductor",
       "nombre": "Máquina Abductores",
       "categoria": "accesorio_pierna",
-      "musculosPrincipales": ["glúteo medio", "glúteo menor"],
+      "musculosPrincipales": [
+        "glúteo medio",
+        "glúteo menor"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "máquina abductores",
       "esBasico": false,
       "notas": "Trabaja estabilizadores laterales de cadera. Prevención de lesiones y estabilidad en sentadilla."
     },
-
     {
       "id": "acc_hip_thrust",
       "nombre": "Hip Thrust",
       "categoria": "accesorio_gluteo",
-      "musculosPrincipales": ["glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "core"],
+      "musculosPrincipales": [
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "core"
+      ],
       "equipamiento": "barra, banco",
       "esBasico": false,
       "notas": "Máxima activación de glúteo mayor. Espalda apoyada en banco, barra sobre la cadera."
@@ -562,8 +852,12 @@
       "id": "acc_hip_thrust_banda",
       "nombre": "Hip Thrust con Banda",
       "categoria": "accesorio_gluteo",
-      "musculosPrincipales": ["glúteos"],
-      "musculosSecundarios": ["isquiotibiales"],
+      "musculosPrincipales": [
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales"
+      ],
       "equipamiento": "banda elástica, banco",
       "esBasico": false,
       "notas": "Versión con banda elástica. Mayor tensión en la parte superior del movimiento."
@@ -572,8 +866,13 @@
       "id": "acc_glute_bridge",
       "nombre": "Glute Bridge (Puente de Glúteo)",
       "categoria": "accesorio_gluteo",
-      "musculosPrincipales": ["glúteos"],
-      "musculosSecundarios": ["isquiotibiales", "core"],
+      "musculosPrincipales": [
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales",
+        "core"
+      ],
       "equipamiento": "barra o peso corporal",
       "esBasico": false,
       "notas": "Similar al Hip Thrust pero tumbado en el suelo. Menor recorrido, bueno para activación."
@@ -582,19 +881,30 @@
       "id": "acc_patada_gluteo",
       "nombre": "Kickback de Glúteo en Polea",
       "categoria": "accesorio_gluteo",
-      "musculosPrincipales": ["glúteos"],
-      "musculosSecundarios": ["isquiotibiales"],
+      "musculosPrincipales": [
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales"
+      ],
       "equipamiento": "polea baja, tobillera",
       "esBasico": false,
       "notas": "Extensión de cadera con polea. Aislamiento de glúteo con tensión constante."
     },
-
     {
       "id": "acc_remo_pendlay",
       "nombre": "Remo Pendlay",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "romboides", "trapecios"],
-      "musculosSecundarios": ["bíceps", "erectores espinales", "deltoides posterior"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "romboides",
+        "trapecios"
+      ],
+      "musculosSecundarios": [
+        "bíceps",
+        "erectores espinales",
+        "deltoides posterior"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Remo con barra desde el suelo con torso paralelo al piso en cada rep. Explosivo y estricto."
@@ -603,8 +913,16 @@
       "id": "acc_remo_barra",
       "nombre": "Remo con Barra (Bent-Over Row)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "romboides", "trapecios"],
-      "musculosSecundarios": ["bíceps", "erectores espinales", "deltoides posterior"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "romboides",
+        "trapecios"
+      ],
+      "musculosSecundarios": [
+        "bíceps",
+        "erectores espinales",
+        "deltoides posterior"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Torso inclinado 45-60°, remo continuo sin apoyar la barra en cada rep. Permite algo más de peso que Pendlay."
@@ -613,8 +931,15 @@
       "id": "acc_remo_db",
       "nombre": "Remo con Mancuerna (Unilateral)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "romboides"],
-      "musculosSecundarios": ["bíceps", "trapecios", "deltoides posterior"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "romboides"
+      ],
+      "musculosSecundarios": [
+        "bíceps",
+        "trapecios",
+        "deltoides posterior"
+      ],
       "equipamiento": "mancuerna, banco",
       "esBasico": false,
       "notas": "Remo a una mano apoyado en banco. Excelente para corregir asimetrías y controlar el rango de movimiento."
@@ -623,8 +948,16 @@
       "id": "acc_dominadas",
       "nombre": "Dominadas (Pull-Ups)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "redondo mayor"],
-      "musculosSecundarios": ["bíceps", "romboides", "trapecios inferiores", "core"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "redondo mayor"
+      ],
+      "musculosSecundarios": [
+        "bíceps",
+        "romboides",
+        "trapecios inferiores",
+        "core"
+      ],
       "equipamiento": "barra de dominadas",
       "esBasico": false,
       "notas": "Agarre prono. Ejercicio rey de espalda con peso corporal. Añadir lastre para progresar."
@@ -633,8 +966,15 @@
       "id": "acc_dominadas_supino",
       "nombre": "Dominadas Supinas (Chin-Ups)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "bíceps"],
-      "musculosSecundarios": ["romboides", "trapecios inferiores", "core"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "bíceps"
+      ],
+      "musculosSecundarios": [
+        "romboides",
+        "trapecios inferiores",
+        "core"
+      ],
       "equipamiento": "barra de dominadas",
       "esBasico": false,
       "notas": "Agarre supino (palmas hacia ti). Mayor activación de bíceps que las pull-ups."
@@ -643,8 +983,15 @@
       "id": "acc_jalon_pecho",
       "nombre": "Jalón al Pecho (Lat Pulldown)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "redondo mayor"],
-      "musculosSecundarios": ["bíceps", "romboides", "trapecios"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "redondo mayor"
+      ],
+      "musculosSecundarios": [
+        "bíceps",
+        "romboides",
+        "trapecios"
+      ],
       "equipamiento": "máquina de poleas, barra lat",
       "esBasico": false,
       "notas": "Alternativa a las dominadas con carga ajustable. Ideal para acumular volumen de espalda."
@@ -653,8 +1000,13 @@
       "id": "acc_jalon_agarre_cerrado",
       "nombre": "Jalón Agarre Cerrado (Close Grip Pulldown)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho"],
-      "musculosSecundarios": ["bíceps", "romboides"],
+      "musculosPrincipales": [
+        "dorsal ancho"
+      ],
+      "musculosSecundarios": [
+        "bíceps",
+        "romboides"
+      ],
       "equipamiento": "máquina de poleas, agarre V o triángulo",
       "esBasico": false,
       "notas": "Agarre neutro cerrado. Mayor recorrido y énfasis en la parte inferior del dorsal."
@@ -663,8 +1015,15 @@
       "id": "acc_remo_polea",
       "nombre": "Remo en Polea Baja (Seated Cable Row)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "romboides", "trapecios"],
-      "musculosSecundarios": ["bíceps", "erectores espinales"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "romboides",
+        "trapecios"
+      ],
+      "musculosSecundarios": [
+        "bíceps",
+        "erectores espinales"
+      ],
       "equipamiento": "máquina de poleas",
       "esBasico": false,
       "notas": "Remo sentado con polea. Tensión constante durante todo el movimiento. Varios agarres posibles."
@@ -673,8 +1032,15 @@
       "id": "acc_remo_t",
       "nombre": "Remo en T (T-Bar Row)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "romboides", "trapecios"],
-      "musculosSecundarios": ["bíceps", "erectores espinales"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "romboides",
+        "trapecios"
+      ],
+      "musculosSecundarios": [
+        "bíceps",
+        "erectores espinales"
+      ],
       "equipamiento": "barra landmine o máquina T-bar",
       "esBasico": false,
       "notas": "Remo con barra en esquina o máquina T-bar. Agarre neutro, permite buena carga."
@@ -683,8 +1049,14 @@
       "id": "acc_pullover",
       "nombre": "Pullover con Mancuerna",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["dorsal ancho", "pectoral mayor"],
-      "musculosSecundarios": ["tríceps largo", "serrato anterior"],
+      "musculosPrincipales": [
+        "dorsal ancho",
+        "pectoral mayor"
+      ],
+      "musculosSecundarios": [
+        "tríceps largo",
+        "serrato anterior"
+      ],
       "equipamiento": "mancuerna, banco",
       "esBasico": false,
       "notas": "Extensión de hombro tumbado en banco. Trabaja dorsales y pecho según la ejecución."
@@ -693,8 +1065,15 @@
       "id": "acc_face_pull",
       "nombre": "Face Pull",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["deltoides posterior", "trapecios medios", "romboides"],
-      "musculosSecundarios": ["infraespinoso", "redondo menor"],
+      "musculosPrincipales": [
+        "deltoides posterior",
+        "trapecios medios",
+        "romboides"
+      ],
+      "musculosSecundarios": [
+        "infraespinoso",
+        "redondo menor"
+      ],
       "equipamiento": "polea alta, cuerda",
       "esBasico": false,
       "notas": "Tirón hacia la cara con cuerda en polea. Fundamental para salud del hombro y postura. Indispensable para powerlifters."
@@ -703,8 +1082,12 @@
       "id": "acc_encogimientos",
       "nombre": "Encogimientos de Hombros (Shrugs)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["trapecios superiores"],
-      "musculosSecundarios": ["romboides"],
+      "musculosPrincipales": [
+        "trapecios superiores"
+      ],
+      "musculosSecundarios": [
+        "romboides"
+      ],
       "equipamiento": "barra o mancuernas",
       "esBasico": false,
       "notas": "Encogimiento de hombros para aislar trapecios. Útil para deadlift y estética del cuello/trapecios."
@@ -713,8 +1096,13 @@
       "id": "acc_hiperextensiones",
       "nombre": "Hiperextensiones (Back Extension)",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["erectores espinales", "glúteos"],
-      "musculosSecundarios": ["isquiotibiales"],
+      "musculosPrincipales": [
+        "erectores espinales",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "isquiotibiales"
+      ],
       "equipamiento": "banco de hiperextensiones",
       "esBasico": false,
       "notas": "Extensión de cadera en banco a 45° o 90°. Fortalece la cadena posterior baja. Añadir disco para progresar."
@@ -723,7 +1111,11 @@
       "id": "acc_reverse_hyper",
       "nombre": "Reverse Hyper",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["glúteos", "isquiotibiales", "erectores espinales"],
+      "musculosPrincipales": [
+        "glúteos",
+        "isquiotibiales",
+        "erectores espinales"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "máquina reverse hyper",
       "esBasico": false,
@@ -733,19 +1125,31 @@
       "id": "acc_good_morning",
       "nombre": "Good Morning",
       "categoria": "accesorio_espalda",
-      "musculosPrincipales": ["isquiotibiales", "erectores espinales", "glúteos"],
-      "musculosSecundarios": ["core"],
+      "musculosPrincipales": [
+        "isquiotibiales",
+        "erectores espinales",
+        "glúteos"
+      ],
+      "musculosSecundarios": [
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Barra en la espalda, flexión de cadera con piernas casi rectas. Accesorio clásico de powerlifting para cadena posterior."
     },
-
     {
       "id": "acc_press_militar",
       "nombre": "Press Militar (Overhead Press / OHP)",
       "categoria": "accesorio_hombro",
-      "musculosPrincipales": ["deltoides anterior", "deltoides medial"],
-      "musculosSecundarios": ["tríceps", "trapecios", "core"],
+      "musculosPrincipales": [
+        "deltoides anterior",
+        "deltoides medial"
+      ],
+      "musculosSecundarios": [
+        "tríceps",
+        "trapecios",
+        "core"
+      ],
       "equipamiento": "barra",
       "esBasico": false,
       "notas": "Press estricto de pie con barra sobre la cabeza. Excelente para desarrollo de hombro y estabilidad del core."
@@ -754,8 +1158,14 @@
       "id": "acc_press_militar_db",
       "nombre": "Press de Hombros con Mancuernas",
       "categoria": "accesorio_hombro",
-      "musculosPrincipales": ["deltoides anterior", "deltoides medial"],
-      "musculosSecundarios": ["tríceps", "trapecios"],
+      "musculosPrincipales": [
+        "deltoides anterior",
+        "deltoides medial"
+      ],
+      "musculosSecundarios": [
+        "tríceps",
+        "trapecios"
+      ],
       "equipamiento": "mancuernas",
       "esBasico": false,
       "notas": "Press de hombros sentado o de pie con mancuernas. Mayor rango de movimiento y trabajo de estabilizadores."
@@ -764,8 +1174,12 @@
       "id": "acc_elev_lateral",
       "nombre": "Elevaciones Laterales",
       "categoria": "accesorio_hombro",
-      "musculosPrincipales": ["deltoides medial"],
-      "musculosSecundarios": ["trapecios superiores"],
+      "musculosPrincipales": [
+        "deltoides medial"
+      ],
+      "musculosSecundarios": [
+        "trapecios superiores"
+      ],
       "equipamiento": "mancuernas",
       "esBasico": false,
       "notas": "Abducción de hombro con mancuernas. Aislamiento del deltoides lateral para anchura de hombros."
@@ -774,8 +1188,12 @@
       "id": "acc_elev_lateral_polea",
       "nombre": "Elevaciones Laterales en Polea",
       "categoria": "accesorio_hombro",
-      "musculosPrincipales": ["deltoides medial"],
-      "musculosSecundarios": ["trapecios superiores"],
+      "musculosPrincipales": [
+        "deltoides medial"
+      ],
+      "musculosSecundarios": [
+        "trapecios superiores"
+      ],
       "equipamiento": "polea baja",
       "esBasico": false,
       "notas": "Versión en polea con tensión constante. Mejor curva de resistencia que con mancuernas."
@@ -784,8 +1202,12 @@
       "id": "acc_elev_frontal",
       "nombre": "Elevaciones Frontales",
       "categoria": "accesorio_hombro",
-      "musculosPrincipales": ["deltoides anterior"],
-      "musculosSecundarios": ["pectoral mayor (clavicular)"],
+      "musculosPrincipales": [
+        "deltoides anterior"
+      ],
+      "musculosSecundarios": [
+        "pectoral mayor (clavicular)"
+      ],
       "equipamiento": "mancuernas o disco",
       "esBasico": false,
       "notas": "Elevación frontal de brazos. Normalmente no necesario si se hace bastante press, pero útil para aislamiento."
@@ -794,8 +1216,13 @@
       "id": "acc_pajaro",
       "nombre": "Pájaros / Rear Delt Fly",
       "categoria": "accesorio_hombro",
-      "musculosPrincipales": ["deltoides posterior"],
-      "musculosSecundarios": ["romboides", "trapecios medios"],
+      "musculosPrincipales": [
+        "deltoides posterior"
+      ],
+      "musculosSecundarios": [
+        "romboides",
+        "trapecios medios"
+      ],
       "equipamiento": "mancuernas o máquina pec deck invertida",
       "esBasico": false,
       "notas": "Aislamiento de deltoides posterior. Complementario a los face pulls para equilibrio del hombro."
@@ -804,19 +1231,27 @@
       "id": "acc_press_arnold",
       "nombre": "Press Arnold",
       "categoria": "accesorio_hombro",
-      "musculosPrincipales": ["deltoides anterior", "deltoides medial"],
-      "musculosSecundarios": ["tríceps"],
+      "musculosPrincipales": [
+        "deltoides anterior",
+        "deltoides medial"
+      ],
+      "musculosSecundarios": [
+        "tríceps"
+      ],
       "equipamiento": "mancuernas",
       "esBasico": false,
       "notas": "Press con rotación desde posición supina a prona. Trabaja las tres cabezas del deltoides con mayor rango."
     },
-
     {
       "id": "acc_aperturas_plano",
       "nombre": "Aperturas con Mancuernas (Plano)",
       "categoria": "accesorio_pecho",
-      "musculosPrincipales": ["pectoral mayor"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "mancuernas, banco plano",
       "esBasico": false,
       "notas": "Aislamiento de pecho con mancuernas abiertas. Gran estiramiento del pectoral."
@@ -825,8 +1260,12 @@
       "id": "acc_aperturas_inclinado",
       "nombre": "Aperturas con Mancuernas (Inclinado)",
       "categoria": "accesorio_pecho",
-      "musculosPrincipales": ["pectoral mayor (porción clavicular)"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor (porción clavicular)"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "mancuernas, banco inclinado",
       "esBasico": false,
       "notas": "Aperturas en banco inclinado. Mayor énfasis en pecho superior."
@@ -835,8 +1274,12 @@
       "id": "acc_crossover",
       "nombre": "Cruces en Polea (Cable Crossover)",
       "categoria": "accesorio_pecho",
-      "musculosPrincipales": ["pectoral mayor"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "poleas altas o medias",
       "esBasico": false,
       "notas": "Aislamiento de pecho con tensión constante. Poleas altas para porción inferior, bajas para superior."
@@ -845,8 +1288,12 @@
       "id": "acc_pec_deck",
       "nombre": "Pec Deck (Máquina de Aperturas)",
       "categoria": "accesorio_pecho",
-      "musculosPrincipales": ["pectoral mayor"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "máquina pec deck",
       "esBasico": false,
       "notas": "Aislamiento de pecho en máquina. Buena contracción máxima y fácil de controlar."
@@ -855,18 +1302,24 @@
       "id": "acc_fondos",
       "nombre": "Fondos en Paralelas (Dips)",
       "categoria": "accesorio_pecho",
-      "musculosPrincipales": ["pectoral mayor", "tríceps"],
-      "musculosSecundarios": ["deltoides anterior"],
+      "musculosPrincipales": [
+        "pectoral mayor",
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "deltoides anterior"
+      ],
       "equipamiento": "barras paralelas",
       "esBasico": false,
       "notas": "Inclinado hacia delante = más pecho. Vertical = más tríceps. Añadir lastre para progresar."
     },
-
     {
       "id": "acc_press_frances",
       "nombre": "Press Francés (Skull Crusher)",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["tríceps"],
+      "musculosPrincipales": [
+        "tríceps"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "barra EZ o recta, banco",
       "esBasico": false,
@@ -876,7 +1329,9 @@
       "id": "acc_ext_triceps_polea",
       "nombre": "Extensiones de Tríceps en Polea (Pushdown)",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["tríceps"],
+      "musculosPrincipales": [
+        "tríceps"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "polea alta, barra recta, V o cuerda",
       "esBasico": false,
@@ -886,7 +1341,9 @@
       "id": "acc_ext_triceps_overhead",
       "nombre": "Extensión de Tríceps Overhead (Polea/Mancuerna)",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["tríceps (cabeza larga)"],
+      "musculosPrincipales": [
+        "tríceps (cabeza larga)"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "polea baja con cuerda o mancuerna",
       "esBasico": false,
@@ -896,8 +1353,12 @@
       "id": "acc_jm_press",
       "nombre": "JM Press",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["tríceps"],
-      "musculosSecundarios": ["pectoral mayor"],
+      "musculosPrincipales": [
+        "tríceps"
+      ],
+      "musculosSecundarios": [
+        "pectoral mayor"
+      ],
       "equipamiento": "barra, banco plano",
       "esBasico": false,
       "notas": "Híbrido entre press francés y close grip bench. La barra baja hacia la barbilla/cuello. Accesorio clásico de Westside para lockout."
@@ -906,8 +1367,13 @@
       "id": "acc_curl_barra",
       "nombre": "Curl de Bíceps con Barra",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["bíceps"],
-      "musculosSecundarios": ["braquial", "braquiorradial"],
+      "musculosPrincipales": [
+        "bíceps"
+      ],
+      "musculosSecundarios": [
+        "braquial",
+        "braquiorradial"
+      ],
       "equipamiento": "barra recta o EZ",
       "esBasico": false,
       "notas": "Flexión de codo con barra. Movimiento compuesto de bíceps, permite buena carga."
@@ -916,8 +1382,13 @@
       "id": "acc_curl_db",
       "nombre": "Curl de Bíceps con Mancuernas",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["bíceps"],
-      "musculosSecundarios": ["braquial", "braquiorradial"],
+      "musculosPrincipales": [
+        "bíceps"
+      ],
+      "musculosSecundarios": [
+        "braquial",
+        "braquiorradial"
+      ],
       "equipamiento": "mancuernas",
       "esBasico": false,
       "notas": "Flexión de codo con mancuernas. Permite supinación completa para máxima contracción del bíceps."
@@ -926,8 +1397,13 @@
       "id": "acc_curl_martillo",
       "nombre": "Curl Martillo (Hammer Curl)",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["braquiorradial", "bíceps"],
-      "musculosSecundarios": ["braquial"],
+      "musculosPrincipales": [
+        "braquiorradial",
+        "bíceps"
+      ],
+      "musculosSecundarios": [
+        "braquial"
+      ],
       "equipamiento": "mancuernas",
       "esBasico": false,
       "notas": "Curl con agarre neutro (palmas enfrentadas). Mayor énfasis en braquiorradial y antebrazo."
@@ -936,8 +1412,12 @@
       "id": "acc_curl_predicador",
       "nombre": "Curl en Banco Predicador (Preacher Curl)",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["bíceps"],
-      "musculosSecundarios": ["braquial"],
+      "musculosPrincipales": [
+        "bíceps"
+      ],
+      "musculosSecundarios": [
+        "braquial"
+      ],
       "equipamiento": "barra EZ o mancuerna, banco predicador",
       "esBasico": false,
       "notas": "Flexión de codo apoyado en banco inclinado. Elimina el balanceo y aísla el bíceps."
@@ -946,8 +1426,12 @@
       "id": "acc_curl_concentrado",
       "nombre": "Curl Concentrado",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["bíceps"],
-      "musculosSecundarios": ["braquial"],
+      "musculosPrincipales": [
+        "bíceps"
+      ],
+      "musculosSecundarios": [
+        "braquial"
+      ],
       "equipamiento": "mancuerna",
       "esBasico": false,
       "notas": "Curl sentado con codo apoyado en la rodilla. Máximo aislamiento del bíceps."
@@ -956,7 +1440,9 @@
       "id": "acc_curl_muñeca",
       "nombre": "Curl de Muñeca (Wrist Curl)",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["flexores del antebrazo"],
+      "musculosPrincipales": [
+        "flexores del antebrazo"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "barra o mancuernas",
       "esBasico": false,
@@ -966,19 +1452,27 @@
       "id": "acc_curl_muñeca_inverso",
       "nombre": "Curl de Muñeca Inverso (Reverse Wrist Curl)",
       "categoria": "accesorio_brazo",
-      "musculosPrincipales": ["extensores del antebrazo"],
+      "musculosPrincipales": [
+        "extensores del antebrazo"
+      ],
       "musculosSecundarios": [],
       "equipamiento": "barra o mancuernas",
       "esBasico": false,
       "notas": "Extensión de muñeca. Previene desbalances y fortalece la parte exterior del antebrazo."
     },
-
     {
       "id": "acc_plancha",
       "nombre": "Plancha (Plank)",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["recto abdominal", "transverso abdominal"],
-      "musculosSecundarios": ["oblicuos", "erectores espinales", "glúteos"],
+      "musculosPrincipales": [
+        "recto abdominal",
+        "transverso abdominal"
+      ],
+      "musculosSecundarios": [
+        "oblicuos",
+        "erectores espinales",
+        "glúteos"
+      ],
       "equipamiento": "peso corporal",
       "esBasico": false,
       "notas": "Isométrico de core. Mantener posición rígida. Progresar añadiendo tiempo o lastre."
@@ -987,8 +1481,14 @@
       "id": "acc_plancha_lateral",
       "nombre": "Plancha Lateral (Side Plank)",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["oblicuos", "cuadrado lumbar"],
-      "musculosSecundarios": ["recto abdominal", "glúteo medio"],
+      "musculosPrincipales": [
+        "oblicuos",
+        "cuadrado lumbar"
+      ],
+      "musculosSecundarios": [
+        "recto abdominal",
+        "glúteo medio"
+      ],
       "equipamiento": "peso corporal",
       "esBasico": false,
       "notas": "Plancha de lado. Trabaja estabilización lateral del tronco, importante para anti-flexión lateral en sentadilla."
@@ -997,8 +1497,15 @@
       "id": "acc_rueda_ab",
       "nombre": "Rueda Abdominal (Ab Wheel Rollout)",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["recto abdominal", "transverso abdominal"],
-      "musculosSecundarios": ["dorsal ancho", "erectores espinales", "oblicuos"],
+      "musculosPrincipales": [
+        "recto abdominal",
+        "transverso abdominal"
+      ],
+      "musculosSecundarios": [
+        "dorsal ancho",
+        "erectores espinales",
+        "oblicuos"
+      ],
       "equipamiento": "rueda abdominal",
       "esBasico": false,
       "notas": "Extensión con rueda desde las rodillas o de pie. Uno de los ejercicios de core más exigentes y efectivos."
@@ -1007,8 +1514,12 @@
       "id": "acc_crunch_polea",
       "nombre": "Crunch en Polea (Cable Crunch)",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["recto abdominal"],
-      "musculosSecundarios": ["oblicuos"],
+      "musculosPrincipales": [
+        "recto abdominal"
+      ],
+      "musculosSecundarios": [
+        "oblicuos"
+      ],
       "equipamiento": "polea alta, cuerda",
       "esBasico": false,
       "notas": "Flexión de tronco arrodillado con cuerda de polea. Permite progresión de carga fácil."
@@ -1017,8 +1528,14 @@
       "id": "acc_hanging_leg_raise",
       "nombre": "Elevación de Piernas Colgado (Hanging Leg Raise)",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["recto abdominal (porción inferior)", "flexores de cadera"],
-      "musculosSecundarios": ["oblicuos", "antebrazos"],
+      "musculosPrincipales": [
+        "recto abdominal (porción inferior)",
+        "flexores de cadera"
+      ],
+      "musculosSecundarios": [
+        "oblicuos",
+        "antebrazos"
+      ],
       "equipamiento": "barra de dominadas",
       "esBasico": false,
       "notas": "Elevación de piernas colgado de una barra. Trabaja la porción inferior del recto abdominal."
@@ -1027,8 +1544,14 @@
       "id": "acc_pallof_press",
       "nombre": "Pallof Press",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["oblicuos", "transverso abdominal"],
-      "musculosSecundarios": ["recto abdominal", "glúteos"],
+      "musculosPrincipales": [
+        "oblicuos",
+        "transverso abdominal"
+      ],
+      "musculosSecundarios": [
+        "recto abdominal",
+        "glúteos"
+      ],
       "equipamiento": "polea o banda elástica",
       "esBasico": false,
       "notas": "Anti-rotación con polea o banda. Excelente para estabilidad del core en los tres básicos."
@@ -1037,8 +1560,14 @@
       "id": "acc_dragon_flag",
       "nombre": "Dragon Flag",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["recto abdominal", "transverso abdominal"],
-      "musculosSecundarios": ["oblicuos", "flexores de cadera"],
+      "musculosPrincipales": [
+        "recto abdominal",
+        "transverso abdominal"
+      ],
+      "musculosSecundarios": [
+        "oblicuos",
+        "flexores de cadera"
+      ],
       "equipamiento": "banco",
       "esBasico": false,
       "notas": "Movimiento avanzado de core. Cuerpo rígido se baja y sube desde la posición de vela agarrado al banco."
@@ -1047,8 +1576,14 @@
       "id": "acc_landmine_rotation",
       "nombre": "Rotación con Landmine",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["oblicuos", "transverso abdominal"],
-      "musculosSecundarios": ["deltoides", "core"],
+      "musculosPrincipales": [
+        "oblicuos",
+        "transverso abdominal"
+      ],
+      "musculosSecundarios": [
+        "deltoides",
+        "core"
+      ],
       "equipamiento": "barra landmine",
       "esBasico": false,
       "notas": "Rotaciones con barra fijada en una esquina. Trabaja anti-rotación y potencia rotacional."
@@ -1057,8 +1592,15 @@
       "id": "acc_suitcase_carry",
       "nombre": "Suitcase Carry (Caminata con Maleta)",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["oblicuos", "cuadrado lumbar", "antebrazos"],
-      "musculosSecundarios": ["trapecios", "glúteo medio"],
+      "musculosPrincipales": [
+        "oblicuos",
+        "cuadrado lumbar",
+        "antebrazos"
+      ],
+      "musculosSecundarios": [
+        "trapecios",
+        "glúteo medio"
+      ],
       "equipamiento": "mancuerna pesada o kettlebell",
       "esBasico": false,
       "notas": "Caminar con un peso en un solo lado. Anti-flexión lateral y fuerza de agarre."
@@ -1067,8 +1609,16 @@
       "id": "acc_farmer_walk",
       "nombre": "Farmer Walk (Paseo del Granjero)",
       "categoria": "accesorio_core",
-      "musculosPrincipales": ["trapecios", "antebrazos", "core"],
-      "musculosSecundarios": ["glúteos", "cuádriceps", "erectores espinales"],
+      "musculosPrincipales": [
+        "trapecios",
+        "antebrazos",
+        "core"
+      ],
+      "musculosSecundarios": [
+        "glúteos",
+        "cuádriceps",
+        "erectores espinales"
+      ],
       "equipamiento": "mancuernas pesadas, farmer handles o trap bar",
       "esBasico": false,
       "notas": "Caminar con pesos pesados en ambas manos. Excelente para fuerza de agarre, trapecios y acondicionamiento general."

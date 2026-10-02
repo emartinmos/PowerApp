@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PLTracker">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="apple-touch-icon" href="icons/icon-152x152.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
     <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-192x192.png">
@@ -24,36 +23,36 @@
             <div class="cronometro-barra-progreso" id="cronometro-barra-progreso"></div>
         </div>
         <div class="cronometro-contenido">
-            <span class="cronometro-icono">⏱️</span>
+            <span class="cronometro-icono"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
             <span class="cronometro-tiempo" id="cronometro-tiempo">3:00</span>
             <div class="cronometro-controles">
-                <button class="btn-cronometro" id="btn-cronometro-pausar" aria-label="Pausar cronómetro">⏸️</button>
-                <button class="btn-cronometro" id="btn-cronometro-reset" aria-label="Reiniciar cronómetro">🔄</button>
-                <button class="btn-cronometro" id="btn-cronometro-cerrar" aria-label="Cerrar cronómetro">✕</button>
+                <button class="btn-cronometro" id="btn-cronometro-pausar" aria-label="Pausar cronómetro"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/></svg></button>
+                <button class="btn-cronometro" id="btn-cronometro-reset" aria-label="Reiniciar cronómetro"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+                <button class="btn-cronometro" id="btn-cronometro-cerrar" aria-label="Cerrar cronómetro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
         </div>
         <div class="cronometro-config">
-            <button class="btn-tiempo" data-tiempo="180">3 min</button>
-            <button class="btn-tiempo activo" data-tiempo="300">5 min</button>
-            <button class="btn-tiempo" data-tiempo="480">8 min</button>
+            <button class="btn-tiempo" data-tiempo="180">03:00</button>
+            <button class="btn-tiempo activo" data-tiempo="300">05:00</button>
+            <button class="btn-tiempo" data-tiempo="480">08:00</button>
         </div>
     </div>
 
     <!-- ===== VISTA 1: ENTRENAR (HOME) ===== -->
     <section id="vista-entrenar" class="vista activa">
         <header class="app-header">
-            <h1 class="app-titulo">🏋️ Entrenar</h1>
-            <p class="app-subtitulo">Selecciona una rutina para comenzar</p>
+            <h1 class="app-titulo">SESIÓN DE ENTRENAMIENTO</h1>
+            <p class="app-subtitulo">SELECCIONAR PROTOCOLO ACTIVO</p>
         </header>
         <main class="vista-contenido">
             <div id="lista-rutinas-entrenar" class="lista-tarjetas">
                 <!-- JS poblará las rutinas guardadas como tarjetas aquí -->
             </div>
             <div id="empty-entrenar" class="empty-state">
-                <div class="empty-state-icono">📋</div>
-                <h3>No hay rutinas creadas</h3>
-                <p>Ve al Constructor para crear tu primera rutina de entrenamiento.</p>
-                <button class="btn btn-primary" id="btn-ir-constructor">Crear Rutina</button>
+                <div class="empty-state-icono"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#404040" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="12" y2="16"/></svg></div>
+                <h3>SIN PROTOCOLOS CONFIGURADOS</h3>
+                <p>Define una plantilla de series y ejercicios en el constructor de protocolos.</p>
+                <button class="btn btn-primary" id="btn-ir-constructor">CREAR PLANTILLA</button>
             </div>
         </main>
     </section>
@@ -65,10 +64,10 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
             </button>
             <div class="header-centro">
-                <h1 class="app-titulo" id="titulo-entrenamiento">Entrenamiento</h1>
+                <h1 class="app-titulo" id="titulo-entrenamiento">SESIÓN ACTIVA</h1>
                 <p class="app-subtitulo" id="fecha-entrenamiento"></p>
             </div>
-            <button class="btn-finalizar" id="btn-finalizar-entrenamiento">Finalizar</button>
+            <button class="btn-finalizar" id="btn-finalizar-entrenamiento">FINALIZAR</button>
         </header>
         <main class="vista-contenido" id="contenido-entrenamiento">
             <!-- JS generará aquí los bloques de ejercicios con sus series -->
@@ -110,7 +109,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="btn-check" aria-label="Completar serie">✔</button>
+                        <button class="btn-check" aria-label="Completar serie"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>
                     </div>
                 </div>
             </div>
@@ -121,7 +120,7 @@
     <!-- ===== VISTA 3: CONSTRUCTOR DE RUTINAS (LISTADO) ===== -->
     <section id="vista-constructor" class="vista">
         <header class="app-header">
-            <h1 class="app-titulo">🔧 Mis Rutinas</h1>
+            <h1 class="app-titulo">PLANTILLAS DE CARGA</h1>
             <button class="btn btn-primary btn-nuevo" id="btn-nueva-rutina">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nueva
@@ -132,9 +131,9 @@
                 <!-- JS poblará las rutinas aquí -->
             </div>
             <div id="empty-constructor" class="empty-state">
-                <div class="empty-state-icono">🔨</div>
-                <h3>Crea tu primera rutina</h3>
-                <p>Pulsa "Nueva" para diseñar tu día de entrenamiento con ejercicios del catálogo.</p>
+                <div class="empty-state-icono"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#404040" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+                <h3>SIN PLANTILLAS</h3>
+                <p>Crea combinaciones de básicos, series efectivas y cargas objetivo.</p>
             </div>
         </main>
     </section>
@@ -145,17 +144,17 @@
             <button class="btn-volver" id="btn-volver-constructor" aria-label="Volver">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
             </button>
-            <h1 class="app-titulo" id="titulo-editor-rutina">Nueva Rutina</h1>
-            <button class="btn-guardar" id="btn-guardar-rutina">Guardar</button>
+            <h1 class="app-titulo" id="titulo-editor-rutina">CONFIGURAR PLANTILLA</h1>
+            <button class="btn-guardar" id="btn-guardar-rutina">GUARDAR</button>
         </header>
         <main class="vista-contenido">
             <div class="form-grupo">
                 <label for="input-nombre-rutina" class="form-label">Nombre de la rutina</label>
-                <input type="text" id="input-nombre-rutina" class="input-texto" placeholder="Ej: Día 1 - Squat Pesado + Banca" autocomplete="off">
+                <input type="text" id="input-nombre-rutina" class="input-texto" placeholder="Ej: DÍA 1 - SQUAT PESADO + BENCH ACC" autocomplete="off">
             </div>
             <div class="seccion-ejercicios-rutina">
                 <div class="seccion-header">
-                    <h2>Ejercicios</h2>
+                    <h2>EJERCICIOS Y SERIES</h2>
                     <button class="btn btn-secondary" id="btn-añadir-ejercicio">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Añadir
@@ -174,13 +173,13 @@
     <!-- ===== VISTA 5: HISTORIAL / 1RM ===== -->
     <section id="vista-historial" class="vista">
         <header class="app-header">
-            <h1 class="app-titulo">📊 Historial</h1>
+            <h1 class="app-titulo">REGISTRO DE CARGAS</h1>
         </header>
         <main class="vista-contenido">
             <!-- Tabs -->
             <div class="tabs">
-                <button class="tab activo" data-tab="tab-historial">Historial</button>
-                <button class="tab" data-tab="tab-1rm">1RM / Marcas</button>
+                <button class="tab activo" data-tab="tab-historial">HISTORIAL</button>
+                <button class="tab" data-tab="tab-1rm">TABLA 1RM</button>
             </div>
 
             <!-- Tab: Historial de sesiones -->
@@ -189,9 +188,9 @@
                     <!-- JS poblará las sesiones completadas -->
                 </div>
                 <div id="empty-historial" class="empty-state">
-                    <div class="empty-state-icono">📖</div>
-                    <h3>Sin entrenamientos registrados</h3>
-                    <p>Completa tu primer entrenamiento y aparecerá aquí.</p>
+                    <div class="empty-state-icono"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#404040" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <h3>SIN REGISTROS</h3>
+                    <p>Las sesiones finalizadas se archivarán con volumen y series totales.</p>
                 </div>
             </div>
 
@@ -203,8 +202,8 @@
 
                     <div class="tarjeta-1rm">
                         <div class="tarjeta-1rm-header">
-                            <span class="tarjeta-1rm-icono">🦵</span>
-                            <h3>Sentadilla (Squat)</h3>
+                            <span class="badge-cat sq">SQ</span>
+                            <h3>SENTADILLA (SQUAT)</h3>
                         </div>
                         <div class="tarjeta-1rm-input">
                             <div class="stepper stepper-grande">
@@ -218,8 +217,8 @@
 
                     <div class="tarjeta-1rm">
                         <div class="tarjeta-1rm-header">
-                            <span class="tarjeta-1rm-icono">🏋️</span>
-                            <h3>Press de Banca (Bench)</h3>
+                            <span class="badge-cat bp">BP</span>
+                            <h3>PRESS DE BANCA (BENCH)</h3>
                         </div>
                         <div class="tarjeta-1rm-input">
                             <div class="stepper stepper-grande">
@@ -233,8 +232,8 @@
 
                     <div class="tarjeta-1rm">
                         <div class="tarjeta-1rm-header">
-                            <span class="tarjeta-1rm-icono">💀</span>
-                            <h3>Peso Muerto (Deadlift)</h3>
+                            <span class="badge-cat dl">DL</span>
+                            <h3>PESO MUERTO (DEADLIFT)</h3>
                         </div>
                         <div class="tarjeta-1rm-input">
                             <div class="stepper stepper-grande">
@@ -246,7 +245,7 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary btn-block" id="btn-guardar-1rm">Guardar 1RM</button>
+                    <button class="btn btn-primary btn-block" id="btn-guardar-1rm">GUARDAR 1RM</button>
                 </div>
 
                 <div class="seccion-1rm">
@@ -274,7 +273,7 @@
         <div class="modal-contenido modal-fullscreen">
             <div class="modal-header">
                 <h2>Seleccionar Ejercicio</h2>
-                <button class="btn-cerrar-modal" id="btn-cerrar-modal-ejercicios" aria-label="Cerrar">✕</button>
+                <button class="btn-cerrar-modal" id="btn-cerrar-modal-ejercicios" aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="modal-body">
                 <div class="barra-busqueda">
@@ -300,7 +299,7 @@
         <div class="modal-contenido">
             <div class="modal-header">
                 <h2 id="titulo-config-series">Configurar Series</h2>
-                <button class="btn-cerrar-modal" id="btn-cerrar-modal-config" aria-label="Cerrar">✕</button>
+                <button class="btn-cerrar-modal" id="btn-cerrar-modal-config" aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="modal-body">
                 <div class="config-grupo">
@@ -364,7 +363,7 @@
         <div class="modal-contenido">
             <div class="modal-header">
                 <h2>Nuevo Ejercicio</h2>
-                <button class="btn-cerrar-modal" id="btn-cerrar-modal-custom" aria-label="Cerrar">✕</button>
+                <button class="btn-cerrar-modal" id="btn-cerrar-modal-custom" aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="modal-body">
                 <div class="form-grupo">
@@ -402,7 +401,7 @@
         <div class="modal-contenido modal-fullscreen">
             <div class="modal-header">
                 <h2 id="titulo-detalle-sesion">Detalle de Sesión</h2>
-                <button class="btn-cerrar-modal" id="btn-cerrar-modal-detalle" aria-label="Cerrar">✕</button>
+                <button class="btn-cerrar-modal" id="btn-cerrar-modal-detalle" aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="modal-body" id="contenido-detalle-sesion">
                 <!-- JS poblará el detalle de la sesión seleccionada -->
@@ -441,13 +440,13 @@
                 <line x1="11" y1="14" x2="21" y2="14"/>
                 <line x1="11" y1="20" x2="18" y2="20"/>
             </svg>
-            <span>Entrenar</span>
+            <span>ENTRENAR</span>
         </button>
         <button class="nav-item" data-vista="vista-constructor" aria-label="Constructor">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
             </svg>
-            <span>Constructor</span>
+            <span>PLANTILLAS</span>
         </button>
         <button class="nav-item" data-vista="vista-historial" aria-label="Historial">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -455,7 +454,7 @@
                 <path d="M18 20V4"/>
                 <path d="M6 20v-4"/>
             </svg>
-            <span>Historial</span>
+            <span>HISTORIAL</span>
         </button>
     </nav>
 

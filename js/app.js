@@ -1,0 +1,2595 @@
+/* ========================================
+   PowerLifting Tracker - App.js
+   PARTE 1: Estado, localStorage, Catálogo,
+   Navegación SPA, Steppers, Tabs, Toast, 1RM
+   ======================================== */
+
+'use strict';
+
+// ============================================================
+// 1. ESTADO GLOBAL DE LA APLICACIÓN
+// ============================================================
+
+const APP = {
+    // Catálogo de ejercicios cargado desde JSON + personalizados
+    catalogoEjercicios: [],
+    catalogoCategorias: [],
+
+    // Estado del editor de rutina actual
+    editorRutina: {
+        id: null,           // null = nueva rutina, string = editando existente
+        ejercicios: []      // ejercicios añadidos temporalmente al editor
+    },
+
+    // Estado del entrenamiento activo
+    entrenamientoActivo: {
+        rutinaId: null,
+        rutinaNombre: '',
+        fechaInicio: null,
+        ejercicios: []      // con datos reales de cada serie
+    },
+
+    // Cronómetro de descanso
+    cronometro: {
+        intervalo: null,
+        segundosRestantes: 0,
+        segundosTotales: 300,   // 5 min por defecto
+        activo: false,
+        pausado: false
+    },
+
+    // Modal de confirmación - callback
+    confirmarCallback: null,
+
+    // Sesión seleccionada en historial para detalle/eliminar
+    sesionSeleccionadaId: null
+};
+
+
+// ============================================================
+// 2. CLAVES Y FUNCIONES DE localStorage
+// ============================================================
+
+const LS_KEYS = {
+    RUTINAS: 'pl_rutinas',
+    HISTORIAL: 'pl_historial',
+    EJERCICIOS_CUSTOM: 'pl_ejercicios_custom',
+    MARCAS_1RM: 'pl_marcas_1rm'
+};
+
+// Valores por defecto para las marcas 1RM
+const MARCAS_1RM_DEFECTO = {
+    squat: 272.5,
+    bench: 170,
+    deadlift: 315
+};
+
+/**
+ * Lee un valor de localStorage y lo parsea como JSON.
+ * Si no existe o hay error de parseo, devuelve el valorDefecto.
+ */
+function leerLocalStorage(clave, valorDefecto) {
+    try {
+        const datos = localStorage.getItem(clave);
+        if (datos === null) {
+            return valorDefecto;
+        }
+        return JSON.parse(datos);
+    } catch (error) {
+        console.warn(`Error leyendo localStorage[${clave}]:`, error);
+        return valorDefecto;
+    }
+}
+
+/**
+ * Guarda un valor en localStorage serializado como JSON.
+ */
+function guardarLocalStorage(clave, valor) {
+    try {
+        localStorage.setItem(clave, JSON.stringify(valor));
+    } catch (error) {
+        console.error(`Error guardando en localStorage[${clave}]:`, error);
+        mostrarToast('Error al guardar datos');
+    }
+}
+
+/**
+ * Obtiene las rutinas guardadas.
+ * @returns {Array} Array de objetos rutina
+ */
+function obtenerRutinas() {
+    return leerLocalStorage(LS_KEYS.RUTINAS, []);
+}
+
+/**
+ * Guarda el array completo de rutinas.
+ */
+function guardarRutinas(rutinas) {
+    guardarLocalStorage(LS_KEYS.RUTINAS, rutinas);
+}
+
+/**
+ * Obtiene el historial de sesiones completadas.
+ * @returns {Array} Array de sesiones
+ */
+function obtenerHistorial() {
+    return leerLocalStorage(LS_KEYS.HISTORIAL, []);
+}
+
+/**
+ * Guarda el historial completo.
+ */
+function guardarHistorial(historial) {
+    guardarLocalStorage(LS_KEYS.HISTORIAL, historial);
+}
+
+/**
+ * Obtiene los ejercicios personalizados del usuario.
+ * @returns {Array} Array de ejercicios custom
+ */
+function obtenerEjerciciosCustom() {
+    return leerLocalStorage(LS_KEYS.EJERCICIOS_CUSTOM, []);
+}
+
+/**
+ * Guarda los ejercicios personalizados.
+ */
+function guardarEjerciciosCustom(ejercicios) {
+    guardarLocalStorage(LS_KEYS.EJERCICIOS_CUSTOM, ejercicios);
+}
+
+/**
+ * Obtiene las marcas 1RM del usuario.
+ * @returns {Object} { squat, bench, deadlift } en kg
+ */
+function obtenerMarcas1RM() {
+    return leerLocalStorage(LS_KEYS.MARCAS_1RM, { ...MARCAS_1RM_DEFECTO });
+}
+
+/**
+ * Guarda las marcas 1RM.
+ */
+function guardarMarcas1RM(marcas) {
+    guardarLocalStorage(LS_KEYS.MARCAS_1RM, marcas);
+}
+
+/**
+ * Genera un ID único basado en timestamp + random.
+ */
+function generarId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+}
+
+
+// ============================================================
+// 3. CARGA DEL CATÁLOGO DE EJERCICIOS (fetch + fallback)
+// ============================================================
+
+// Fallback mínimo por si falla el fetch (los 3 básicos + algunos accesorios)
+const EJERCICIOS_FALLBACK = [
+    {
+        id: 'sq_low_bar',
+        nombre: 'Sentadilla Barra Baja (Low Bar)',
+        categoria: 'squat',
+        musculosPrincipales: ['glúteos', 'isquiotibiales', 'cuádriceps'],
+        musculosSecundarios: ['erectores espinales', 'core'],
+        equipamiento: 'barra',
+        esBasico: true,
+        notas: 'Barra apoyada sobre deltoides posteriores. Variante más común en competición.'
+    },
+    {
+        id: 'sq_high_bar',
+        nombre: 'Sentadilla Barra Alta (High Bar)',
+        categoria: 'squat',
+        musculosPrincipales: ['cuádriceps', 'glúteos'],
+        musculosSecundarios: ['isquiotibiales', 'erectores espinales', 'core'],
+        equipamiento: 'barra',
+        esBasico: true,
+        notas: 'Barra apoyada sobre trapecios superiores.'
+    },
+    {
+        id: 'sq_pausa',
+        nombre: 'Sentadilla con Pausa (Paused Squat)',
+        categoria: 'squat',
+        musculosPrincipales: ['cuádriceps', 'glúteos'],
+        musculosSecundarios: ['isquiotibiales', 'erectores espinales', 'core'],
+        equipamiento: 'barra',
+        esBasico: false,
+        notas: 'Pausa de 2-3 segundos en el punto más bajo.'
+    },
+    {
+        id: 'bp_competicion',
+        nombre: 'Press de Banca Competición (Pausa)',
+        categoria: 'bench',
+        musculosPrincipales: ['pectoral mayor', 'tríceps'],
+        musculosSecundarios: ['deltoides anterior', 'dorsal ancho'],
+        equipamiento: 'barra, banco plano',
+        esBasico: true,
+        notas: 'Barra desciende al pecho con pausa completa. Estándar IPF.'
+    },
+    {
+        id: 'bp_tng',
+        nombre: 'Press de Banca Touch and Go (TNG)',
+        categoria: 'bench',
+        musculosPrincipales: ['pectoral mayor', 'tríceps'],
+        musculosSecundarios: ['deltoides anterior', 'dorsal ancho'],
+        equipamiento: 'barra, banco plano',
+        esBasico: true,
+        notas: 'Sin pausa en el pecho: se toca y se empuja directamente.'
+    },
+    {
+        id: 'bp_close_grip',
+        nombre: 'Press de Banca Agarre Cerrado (Close Grip)',
+        categoria: 'bench',
+        musculosPrincipales: ['tríceps', 'pectoral mayor'],
+        musculosSecundarios: ['deltoides anterior'],
+        equipamiento: 'barra, banco plano',
+        esBasico: false,
+        notas: 'Mayor énfasis en tríceps. Excelente para lockout.'
+    },
+    {
+        id: 'dl_convencional',
+        nombre: 'Peso Muerto Convencional',
+        categoria: 'deadlift',
+        musculosPrincipales: ['erectores espinales', 'glúteos', 'isquiotibiales'],
+        musculosSecundarios: ['cuádriceps', 'trapecios', 'antebrazos', 'core'],
+        equipamiento: 'barra',
+        esBasico: true,
+        notas: 'Pies a la anchura de los hombros, manos por fuera.'
+    },
+    {
+        id: 'dl_sumo',
+        nombre: 'Peso Muerto Sumo',
+        categoria: 'deadlift',
+        musculosPrincipales: ['glúteos', 'cuádriceps', 'aductores'],
+        musculosSecundarios: ['isquiotibiales', 'erectores espinales', 'trapecios'],
+        equipamiento: 'barra',
+        esBasico: true,
+        notas: 'Piernas muy abiertas, manos entre las rodillas. Muy usado en competición.'
+    },
+    {
+        id: 'dl_rdl',
+        nombre: 'Peso Muerto Rumano (RDL)',
+        categoria: 'deadlift',
+        musculosPrincipales: ['isquiotibiales', 'glúteos'],
+        musculosSecundarios: ['erectores espinales', 'core'],
+        equipamiento: 'barra',
+        esBasico: false,
+        notas: 'Se baja la barra con piernas casi extendidas mediante hip hinge.'
+    },
+    {
+        id: 'acc_prensa',
+        nombre: 'Prensa de Piernas (Leg Press)',
+        categoria: 'accesorio_pierna',
+        musculosPrincipales: ['cuádriceps', 'glúteos'],
+        musculosSecundarios: ['isquiotibiales'],
+        equipamiento: 'máquina prensa',
+        esBasico: false,
+        notas: 'Excelente para acumular volumen de piernas sin estrés axial.'
+    },
+    {
+        id: 'acc_dominadas',
+        nombre: 'Dominadas (Pull-Ups)',
+        categoria: 'accesorio_espalda',
+        musculosPrincipales: ['dorsal ancho', 'redondo mayor'],
+        musculosSecundarios: ['bíceps', 'romboides', 'core'],
+        equipamiento: 'barra de dominadas',
+        esBasico: false,
+        notas: 'Ejercicio rey de espalda con peso corporal.'
+    },
+    {
+        id: 'acc_press_militar',
+        nombre: 'Press Militar (OHP)',
+        categoria: 'accesorio_hombro',
+        musculosPrincipales: ['deltoides anterior', 'deltoides medial'],
+        musculosSecundarios: ['tríceps', 'trapecios', 'core'],
+        equipamiento: 'barra',
+        esBasico: false,
+        notas: 'Press estricto de pie con barra sobre la cabeza.'
+    }
+];
+
+const CATEGORIAS_FALLBACK = [
+    { id: 'squat', nombre: 'Sentadilla (Squat)', icono: 'SQ' },
+    { id: 'bench', nombre: 'Press de Banca (Bench Press)', icono: 'BP' },
+    { id: 'deadlift', nombre: 'Peso Muerto (Deadlift)', icono: 'DL' },
+    { id: 'accesorio_pierna', nombre: 'Accesorios - Pierna', icono: 'LEG' },
+    { id: 'accesorio_espalda', nombre: 'Accesorios - Espalda', icono: 'BACK' },
+    { id: 'accesorio_pecho', nombre: 'Accesorios - Pecho', icono: 'CHEST' },
+    { id: 'accesorio_hombro', nombre: 'Accesorios - Hombro', icono: 'SHLD' },
+    { id: 'accesorio_brazo', nombre: 'Accesorios - Brazo', icono: 'ARM' },
+    { id: 'accesorio_core', nombre: 'Accesorios - Core', icono: 'CORE' },
+    { id: 'accesorio_gluteo', nombre: 'Accesorios - Glúteo', icono: 'GLUTE' }
+];
+
+/**
+ * Carga el catálogo de ejercicios desde el JSON externo.
+ * Si falla, usa el fallback mínimo.
+ * Combina los ejercicios del JSON con los personalizados del usuario.
+ */
+async function cargarCatalogoEjercicios() {
+    let datosJSON = null;
+
+    try {
+        const respuesta = await fetch('data/ejercicios.json');
+        if (!respuesta.ok) {
+            throw new Error(`HTTP ${respuesta.status}`);
+        }
+        datosJSON = await respuesta.json();
+        console.log(`[OK] Catálogo cargado: ${datosJSON.ejercicios.length} ejercicios`);
+    } catch (error) {
+        console.warn('[WARN] No se pudo cargar ejercicios.json, usando fallback:', error.message);
+        datosJSON = {
+            categorias: CATEGORIAS_FALLBACK,
+            ejercicios: EJERCICIOS_FALLBACK
+        };
+    }
+
+    // Guardar categorías
+    APP.catalogoCategorias = datosJSON.categorias || CATEGORIAS_FALLBACK;
+
+    // Combinar ejercicios del JSON con los personalizados del usuario
+    const ejerciciosCustom = obtenerEjerciciosCustom();
+    APP.catalogoEjercicios = [...datosJSON.ejercicios, ...ejerciciosCustom];
+
+    console.log(`[DATA] Total ejercicios disponibles: ${APP.catalogoEjercicios.length} (${ejerciciosCustom.length} personalizados)`);
+}
+
+/**
+ * Busca un ejercicio por su ID en el catálogo completo.
+ * @param {string} id - ID del ejercicio
+ * @returns {Object|null} Ejercicio encontrado o null
+ */
+function buscarEjercicioPorId(id) {
+    return APP.catalogoEjercicios.find(ej => ej.id === id) || null;
+}
+
+/**
+ * Obtiene el icono de una categoría por su ID.
+ * @param {string} categoriaId
+ * @returns {string} Emoji icono
+ */
+function obtenerIconoCategoria(categoriaId) {
+    const cat = APP.catalogoCategorias.find(c => c.id === categoriaId);
+    return cat ? cat.icono : 'ACC';
+}
+
+/**
+ * Obtiene el nombre de una categoría por su ID.
+ * @param {string} categoriaId
+ * @returns {string}
+ */
+function obtenerNombreCategoria(categoriaId) {
+    const cat = APP.catalogoCategorias.find(c => c.id === categoriaId);
+    return cat ? cat.nombre : categoriaId;
+}
+
+
+// ============================================================
+// 4. SISTEMA DE NAVEGACIÓN SPA
+// ============================================================
+
+// IDs de las vistas principales accesibles desde el bottom nav
+const VISTAS_NAV = ['vista-entrenar', 'vista-constructor', 'vista-historial'];
+
+// Todas las vistas (incluidas las que no están en el nav)
+const TODAS_LAS_VISTAS = [
+    'vista-entrenar',
+    'vista-entrenamiento',
+    'vista-constructor',
+    'vista-editor-rutina',
+    'vista-historial'
+];
+
+/**
+ * Navega a una vista específica ocultando todas las demás.
+ * @param {string} vistaId - ID de la sección a mostrar
+ * @param {Object} opciones - { actualizarNav: bool, scrollTop: bool }
+ */
+function navegarA(vistaId, opciones = {}) {
+    const { actualizarNav = true, scrollTop = true } = opciones;
+
+    // Ocultar todas las vistas
+    TODAS_LAS_VISTAS.forEach(id => {
+        const seccion = document.getElementById(id);
+        if (seccion) {
+            seccion.classList.remove('activa');
+        }
+    });
+
+    // Mostrar la vista seleccionada
+    const vistaDestino = document.getElementById(vistaId);
+    if (vistaDestino) {
+        vistaDestino.classList.add('activa');
+    }
+
+    // Actualizar el bottom nav si la vista es una de las principales
+    if (actualizarNav && VISTAS_NAV.includes(vistaId)) {
+        actualizarNavActivo(vistaId);
+    }
+
+    // Scroll al top de la vista
+    if (scrollTop) {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    // Mostrar/ocultar el bottom nav según la vista
+    const navBottom = document.getElementById('nav-bottom');
+    if (navBottom) {
+        if (vistaId === 'vista-entrenamiento' || vistaId === 'vista-editor-rutina') {
+            navBottom.style.display = 'none';
+        } else {
+            navBottom.style.display = 'flex';
+        }
+    }
+}
+
+/**
+ * Actualiza la clase 'activo' en los botones del bottom nav.
+ * @param {string} vistaId - ID de la vista activa
+ */
+function actualizarNavActivo(vistaId) {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        if (item.dataset.vista === vistaId) {
+            item.classList.add('activo');
+        } else {
+            item.classList.remove('activo');
+        }
+    });
+}
+
+/**
+ * Inicializa los event listeners del bottom nav.
+ */
+function inicializarNavegacion() {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const vistaId = item.dataset.vista;
+            if (vistaId) {
+                navegarA(vistaId);
+
+                // Actualizar contenido al entrar en cada vista
+                if (vistaId === 'vista-entrenar') {
+                    renderizarRutinasEntrenar();
+                } else if (vistaId === 'vista-constructor') {
+                    renderizarRutinasConstructor();
+                } else if (vistaId === 'vista-historial') {
+                    renderizarHistorial();
+                    actualizarTabla1RM();
+                }
+            }
+        });
+    });
+
+    // Botón "Crear Rutina" desde el empty state de Entrenar
+    const btnIrConstructor = document.getElementById('btn-ir-constructor');
+    if (btnIrConstructor) {
+        btnIrConstructor.addEventListener('click', () => {
+            navegarA('vista-constructor');
+        });
+    }
+}
+
+
+// ============================================================
+// 5. SISTEMA DE TABS (Historial / 1RM)
+// ============================================================
+
+/**
+ * Inicializa la lógica de tabs en la vista de historial.
+ */
+function inicializarTabs() {
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetId = tab.dataset.tab;
+
+            // Desactivar todos los tabs
+            tabs.forEach(t => t.classList.remove('activo'));
+
+            // Desactivar todos los contenidos de tab
+            document.querySelectorAll('.tab-contenido').forEach(tc => {
+                tc.classList.remove('activo');
+            });
+
+            // Activar el tab clicado y su contenido
+            tab.classList.add('activo');
+            const contenido = document.getElementById(targetId);
+            if (contenido) {
+                contenido.classList.add('activo');
+            }
+        });
+    });
+}
+
+
+// ============================================================
+// 6. SISTEMA DE TOAST (NOTIFICACIONES)
+// ============================================================
+
+let toastTimeout = null;
+
+/**
+ * Muestra un toast/notificación temporal.
+ * @param {string} mensaje - Texto a mostrar
+ * @param {number} duracion - Milisegundos (por defecto 2500)
+ */
+function mostrarToast(mensaje, duracion = 2500) {
+    const toast = document.getElementById('toast');
+    const toastMensaje = document.getElementById('toast-mensaje');
+    if (!toast || !toastMensaje) return;
+
+    // Limpiar toast anterior
+    if (toastTimeout) {
+        clearTimeout(toastTimeout);
+        toast.classList.remove('saliendo');
+    }
+
+    toastMensaje.textContent = mensaje;
+    toast.classList.remove('oculto', 'saliendo');
+
+    toastTimeout = setTimeout(() => {
+        toast.classList.add('saliendo');
+        setTimeout(() => {
+            toast.classList.add('oculto');
+            toast.classList.remove('saliendo');
+        }, 250); // Duración de la animación toastOut
+    }, duracion);
+}
+
+
+// ============================================================
+// 7. MODAL DE CONFIRMACIÓN GENÉRICO
+// ============================================================
+
+/**
+ * Muestra el modal de confirmación con un texto y un callback.
+ * @param {string} texto - Pregunta a mostrar
+ * @param {Function} onConfirmar - Función a ejecutar si el usuario acepta
+ * @param {string} textoBoton - Texto del botón de acción (por defecto "Eliminar")
+ */
+function mostrarConfirmacion(texto, onConfirmar, textoBoton = 'Eliminar') {
+    const modal = document.getElementById('modal-confirmar');
+    const textoEl = document.getElementById('texto-confirmar');
+    const btnAceptar = document.getElementById('btn-aceptar-confirmar');
+
+    if (!modal || !textoEl || !btnAceptar) return;
+
+    textoEl.textContent = texto;
+    btnAceptar.textContent = textoBoton;
+    APP.confirmarCallback = onConfirmar;
+    modal.classList.add('activo');
+}
+
+/**
+ * Inicializa los botones del modal de confirmación.
+ */
+function inicializarModalConfirmar() {
+    const btnCancelar = document.getElementById('btn-cancelar-confirmar');
+    const btnAceptar = document.getElementById('btn-aceptar-confirmar');
+    const modal = document.getElementById('modal-confirmar');
+
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', () => {
+            if (modal) modal.classList.remove('activo');
+            APP.confirmarCallback = null;
+        });
+    }
+
+    if (btnAceptar) {
+        btnAceptar.addEventListener('click', () => {
+            if (typeof APP.confirmarCallback === 'function') {
+                APP.confirmarCallback();
+            }
+            if (modal) modal.classList.remove('activo');
+            APP.confirmarCallback = null;
+        });
+    }
+}
+
+
+// ============================================================
+// 8. STEPPER CONTROLS (DELEGACIÓN DE EVENTOS)
+// ============================================================
+
+/**
+ * Inicializa los controles stepper (botones +/-) globalmente
+ * mediante delegación de eventos en el document.
+ * Funciona tanto para steppers estáticos del HTML como los
+ * generados dinámicamente por JS.
+ */
+function inicializarSteppers() {
+    document.addEventListener('click', (e) => {
+        const boton = e.target.closest('.stepper-btn');
+        if (!boton) return;
+
+        const step = parseFloat(boton.dataset.step);
+        if (isNaN(step)) return;
+
+        let input = null;
+
+        // Si el botón tiene data-target, buscar el input por ID
+        if (boton.dataset.target) {
+            input = document.getElementById(boton.dataset.target);
+        }
+
+        // Si no, buscar el input hermano dentro del mismo stepper
+        if (!input) {
+            const stepper = boton.closest('.stepper');
+            if (stepper) {
+                input = stepper.querySelector('input');
+            }
+        }
+
+        if (!input) return;
+
+        const valorActual = parseFloat(input.value) || 0;
+        const min = parseFloat(input.min);
+        const max = parseFloat(input.max);
+        let nuevoValor = valorActual + step;
+
+        // Respetar min/max si están definidos
+        if (!isNaN(min) && nuevoValor < min) nuevoValor = min;
+        if (!isNaN(max) && nuevoValor > max) nuevoValor = max;
+
+        // Redondear para evitar errores de punto flotante
+        nuevoValor = Math.round(nuevoValor * 100) / 100;
+
+        input.value = nuevoValor;
+
+        // Disparar evento 'input' para que otros listeners lo detecten
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+}
+
+
+// ============================================================
+// 9. GESTIÓN DE 1RM Y CALCULADORA DE PORCENTAJES
+// ============================================================
+
+/**
+ * Carga los valores de 1RM del localStorage y los muestra
+ * en los inputs correspondientes de la vista de Historial.
+ */
+function cargar1RMEnInputs() {
+    const marcas = obtenerMarcas1RM();
+
+    const inputSquat = document.getElementById('input-1rm-squat');
+    const inputBench = document.getElementById('input-1rm-bench');
+    const inputDeadlift = document.getElementById('input-1rm-deadlift');
+
+    if (inputSquat) inputSquat.value = marcas.squat;
+    if (inputBench) inputBench.value = marcas.bench;
+    if (inputDeadlift) inputDeadlift.value = marcas.deadlift;
+}
+
+/**
+ * Lee los inputs de 1RM y guarda los valores en localStorage.
+ */
+function guardar1RMDesdeInputs() {
+    const inputSquat = document.getElementById('input-1rm-squat');
+    const inputBench = document.getElementById('input-1rm-bench');
+    const inputDeadlift = document.getElementById('input-1rm-deadlift');
+
+    const marcas = {
+        squat: parseFloat(inputSquat?.value) || 0,
+        bench: parseFloat(inputBench?.value) || 0,
+        deadlift: parseFloat(inputDeadlift?.value) || 0
+    };
+
+    guardarMarcas1RM(marcas);
+    mostrarToast('1RM ACTUALIZADO');
+    actualizarTabla1RM();
+}
+
+/**
+ * Calcula el porcentaje de un peso respecto al 1RM.
+ * @param {number} peso - Peso en kg
+ * @param {number} rm - 1RM en kg
+ * @returns {number} Porcentaje (0-100+)
+ */
+function calcularPorcentaje1RM(peso, rm) {
+    if (!rm || rm <= 0) return 0;
+    return Math.round((peso / rm) * 1000) / 10; // Un decimal
+}
+
+/**
+ * Determina la categoría de 1RM de un ejercicio.
+ * Devuelve 'squat', 'bench' o 'deadlift' si el ejercicio pertenece
+ * a esa categoría principal, o null si es un accesorio.
+ * @param {string} categoriaId - Categoría del ejercicio
+ * @returns {string|null}
+ */
+function obtenerTipo1RM(categoriaId) {
+    if (categoriaId === 'squat') return 'squat';
+    if (categoriaId === 'bench') return 'bench';
+    if (categoriaId === 'deadlift') return 'deadlift';
+    return null;
+}
+
+/**
+ * Genera y muestra la tabla de porcentajes en la calculadora.
+ * Calcula desde el 50% hasta el 100% del 1RM seleccionado.
+ */
+function actualizarTabla1RM() {
+    const selectEjercicio = document.getElementById('calc-ejercicio');
+    const tablaPorcentajes = document.getElementById('tabla-porcentajes');
+    if (!selectEjercicio || !tablaPorcentajes) return;
+
+    const tipo = selectEjercicio.value; // 'squat', 'bench' o 'deadlift'
+    const marcas = obtenerMarcas1RM();
+    const rm = marcas[tipo] || 0;
+
+    if (rm <= 0) {
+        tablaPorcentajes.innerHTML = `
+            <div class="empty-state-mini">
+                <p>Introduce tu 1RM arriba para ver la tabla de porcentajes</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Porcentajes a mostrar
+    const porcentajes = [100, 97.5, 95, 92.5, 90, 87.5, 85, 82.5, 80, 77.5, 75, 72.5, 70, 67.5, 65, 62.5, 60, 57.5, 55, 52.5, 50];
+
+    let html = '';
+
+    // Header de la tabla
+    html += `
+        <div class="tabla-fila tabla-fila-header">
+            <span class="tabla-col">%</span>
+            <span class="tabla-col">Peso (kg)</span>
+            <span class="tabla-col">Peso (kg)</span>
+        </div>
+    `;
+
+    // Filas de porcentajes (dos por fila para ahorrar espacio no es necesario,
+    // mejor una por fila para claridad)
+    porcentajes.forEach(pct => {
+        const peso = Math.round((rm * pct / 100) * 10) / 10; // Un decimal
+        // Redondear al disco más cercano (2.5 kg)
+        const pesoRedondeado = Math.round(peso / 2.5) * 2.5;
+
+        html += `
+            <div class="tabla-fila">
+                <span class="tabla-col">${pct}%</span>
+                <span class="tabla-col">${peso}</span>
+                <span class="tabla-col">${pesoRedondeado}</span>
+            </div>
+        `;
+    });
+
+    tablaPorcentajes.innerHTML = html;
+}
+
+/**
+ * Inicializa los eventos de la sección 1RM.
+ */
+function inicializar1RM() {
+    // Botón guardar 1RM
+    const btnGuardar = document.getElementById('btn-guardar-1rm');
+    if (btnGuardar) {
+        btnGuardar.addEventListener('click', guardar1RMDesdeInputs);
+    }
+
+    // Selector de ejercicio para la calculadora
+    const selectCalc = document.getElementById('calc-ejercicio');
+    if (selectCalc) {
+        selectCalc.addEventListener('change', actualizarTabla1RM);
+    }
+
+    // Cargar valores actuales
+    cargar1RMEnInputs();
+    actualizarTabla1RM();
+}
+
+
+// ============================================================
+// 10. FUNCIONES AUXILIARES DE FORMATO
+// ============================================================
+
+/**
+ * Formatea una fecha ISO a un formato legible en español.
+ * @param {string} fechaISO - Fecha en formato ISO
+ * @returns {Object} { dia, mes, diaSemana, completa }
+ */
+function formatearFecha(fechaISO) {
+    const fecha = new Date(fechaISO);
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const mesesLargo = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    return {
+        dia: fecha.getDate(),
+        mes: meses[fecha.getMonth()],
+        mesLargo: mesesLargo[fecha.getMonth()],
+        diaSemana: dias[fecha.getDay()],
+        anio: fecha.getFullYear(),
+        completa: `${dias[fecha.getDay()]} ${fecha.getDate()} de ${mesesLargo[fecha.getMonth()]} ${fecha.getFullYear()}`,
+        corta: `${fecha.getDate()} ${meses[fecha.getMonth()]} ${fecha.getFullYear()}`
+    };
+}
+
+/**
+ * Obtiene la fecha actual formateada.
+ * @returns {string} Fecha legible
+ */
+function fechaHoy() {
+    return formatearFecha(new Date().toISOString()).completa;
+}
+
+
+// ============================================================
+// 11. FUNCIONES PLACEHOLDER PARA PARTES 2 Y 3
+//     (Se definirán completas en las siguientes partes)
+// ============================================================
+
+// Estas funciones se invocan desde la navegación y el DOMContentLoaded.
+// Se definen aquí vacías para evitar errores de referencia y se
+// sobreescribirán en las Partes 2 y 3 del JS.
+
+function renderizarRutinasEntrenar() {
+    // PARTE 2: Renderiza las tarjetas de rutinas en la vista Entrenar
+    const contenedor = document.getElementById('lista-rutinas-entrenar');
+    const emptyState = document.getElementById('empty-entrenar');
+    const rutinas = obtenerRutinas();
+
+    if (!contenedor || !emptyState) return;
+
+    if (rutinas.length === 0) {
+        contenedor.innerHTML = '';
+        emptyState.classList.remove('oculto');
+        emptyState.style.display = '';
+        return;
+    }
+
+    emptyState.classList.add('oculto');
+    emptyState.style.display = 'none';
+
+    contenedor.innerHTML = rutinas.map(rutina => {
+        const numEjercicios = rutina.ejercicios ? rutina.ejercicios.length : 0;
+        const badges = (rutina.ejercicios || []).map(ej => {
+            const ejercicio = buscarEjercicioPorId(ej.ejercicioId);
+            const nombre = ejercicio ? ejercicio.nombre : ej.ejercicioId;
+            // Nombre corto: solo la primera parte significativa
+            const nombreCorto = nombre.length > 20 ? nombre.substring(0, 20) + '…' : nombre;
+            return `<span class="tarjeta-badge">${nombreCorto}</span>`;
+        }).join('');
+
+        return `
+            <div class="tarjeta" data-rutina-id="${rutina.id}">
+                <div class="tarjeta-header">
+                    <h3 class="tarjeta-titulo">${rutina.nombre}</h3>
+                </div>
+                <p class="tarjeta-subtitulo">${numEjercicios} ejercicio${numEjercicios !== 1 ? 's' : ''}</p>
+                <div class="tarjeta-ejercicios">${badges}</div>
+                <div class="tarjeta-acciones">
+                    <button class="btn btn-primary btn-empezar" data-rutina-id="${rutina.id}">
+                        INICIAR PROTOCOLO
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Event listeners para los botones "Empezar"
+    contenedor.querySelectorAll('.btn-empezar').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rutinaId = btn.dataset.rutinaId;
+            iniciarEntrenamiento(rutinaId); // Se define en PARTE 3
+        });
+    });
+}
+
+function renderizarRutinasConstructor() {
+    // PARTE 2: Renderiza las tarjetas de rutinas en el Constructor
+    const contenedor = document.getElementById('lista-rutinas-constructor');
+    const emptyState = document.getElementById('empty-constructor');
+    const rutinas = obtenerRutinas();
+
+    if (!contenedor || !emptyState) return;
+
+    if (rutinas.length === 0) {
+        contenedor.innerHTML = '';
+        emptyState.classList.remove('oculto');
+        emptyState.style.display = '';
+        return;
+    }
+
+    emptyState.classList.add('oculto');
+    emptyState.style.display = 'none';
+
+    contenedor.innerHTML = rutinas.map(rutina => {
+        const numEjercicios = rutina.ejercicios ? rutina.ejercicios.length : 0;
+        const detalles = (rutina.ejercicios || []).map(ej => {
+            const ejercicio = buscarEjercicioPorId(ej.ejercicioId);
+            const nombre = ejercicio ? ejercicio.nombre : ej.ejercicioId;
+            const nombreCorto = nombre.length > 25 ? nombre.substring(0, 25) + '…' : nombre;
+            return `<span class="tarjeta-badge">${nombreCorto}</span>`;
+        }).join('');
+
+        return `
+            <div class="tarjeta" data-rutina-id="${rutina.id}">
+                <div class="tarjeta-header">
+                    <h3 class="tarjeta-titulo">${rutina.nombre}</h3>
+                </div>
+                <p class="tarjeta-subtitulo">${numEjercicios} ejercicio${numEjercicios !== 1 ? 's' : ''}</p>
+                <div class="tarjeta-ejercicios">${detalles}</div>
+                <div class="tarjeta-acciones">
+                    <button class="btn btn-secondary btn-editar-rutina" data-rutina-id="${rutina.id}">
+                        EDITAR
+                    </button>
+                    <button class="btn btn-danger btn-eliminar-rutina" data-rutina-id="${rutina.id}">
+                        ELIMINAR
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Event listeners para editar
+    contenedor.querySelectorAll('.btn-editar-rutina').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rutinaId = btn.dataset.rutinaId;
+            abrirEditorRutina(rutinaId); // Se define en PARTE 2
+        });
+    });
+
+    // Event listeners para eliminar
+    contenedor.querySelectorAll('.btn-eliminar-rutina').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rutinaId = btn.dataset.rutinaId;
+            mostrarConfirmacion('¿Eliminar esta rutina?', () => {
+                let rutinas = obtenerRutinas();
+                rutinas = rutinas.filter(r => r.id !== rutinaId);
+                guardarRutinas(rutinas);
+                renderizarRutinasConstructor();
+                renderizarRutinasEntrenar();
+                mostrarToast('Rutina eliminada');
+            });
+        });
+    });
+}
+
+function renderizarHistorial() {
+    // PARTE 3: Renderiza el historial de sesiones completadas
+    const contenedor = document.getElementById('lista-historial');
+    const emptyState = document.getElementById('empty-historial');
+    const historial = obtenerHistorial();
+
+    if (!contenedor || !emptyState) return;
+
+    if (historial.length === 0) {
+        contenedor.innerHTML = '';
+        emptyState.classList.remove('oculto');
+        emptyState.style.display = '';
+        return;
+    }
+
+    emptyState.classList.add('oculto');
+    emptyState.style.display = 'none';
+
+    // Ordenar por fecha descendente (más reciente primero)
+    const historialOrdenado = [...historial].sort((a, b) => {
+        return new Date(b.fecha) - new Date(a.fecha);
+    });
+
+    contenedor.innerHTML = historialOrdenado.map(sesion => {
+        const fecha = formatearFecha(sesion.fecha);
+        const numEjercicios = sesion.ejercicios ? sesion.ejercicios.length : 0;
+        let totalSeries = 0;
+        if (sesion.ejercicios) {
+            sesion.ejercicios.forEach(ej => {
+                if (ej.series) totalSeries += ej.series.length;
+            });
+        }
+
+        return `
+            <div class="historial-card" data-sesion-id="${sesion.id}">
+                <div class="historial-fecha">
+                    <span class="historial-fecha-dia">${fecha.dia}</span>
+                    <span class="historial-fecha-mes">${fecha.mes}</span>
+                </div>
+                <div class="historial-info">
+                    <p class="historial-nombre">${sesion.rutinaNombre || 'Entrenamiento'}</p>
+                    <p class="historial-resumen">${numEjercicios} ejercicio${numEjercicios !== 1 ? 's' : ''} · ${totalSeries} series</p>
+                </div>
+                <span class="historial-flecha">›</span>
+            </div>
+        `;
+    }).join('');
+
+    // Event listeners para ver detalle
+    contenedor.querySelectorAll('.historial-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const sesionId = card.dataset.sesionId;
+            abrirDetalleSesion(sesionId); // Se define en PARTE 3
+        });
+    });
+}
+
+// Placeholder para funciones que se definirán en PARTE 2 y PARTE 3
+function iniciarEntrenamiento(rutinaId) {
+    console.log('iniciarEntrenamiento() se definirá en PARTE 3. rutinaId:', rutinaId);
+}
+
+function abrirEditorRutina(rutinaId) {
+    console.log('abrirEditorRutina() se definirá en PARTE 2. rutinaId:', rutinaId);
+}
+
+function abrirDetalleSesion(sesionId) {
+    console.log('abrirDetalleSesion() se definirá en PARTE 3. sesionId:', sesionId);
+}
+
+
+// ============================================================
+// 12. INICIALIZACIÓN DE LA APP (DOMContentLoaded)
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[POWERAPP] PowerLifting Tracker - Iniciando...');
+
+    // 1. Cargar el catálogo de ejercicios
+    await cargarCatalogoEjercicios();
+
+    // 2. Inicializar sistemas de UI
+    inicializarNavegacion();
+    inicializarTabs();
+    inicializarSteppers();
+    inicializarModalConfirmar();
+
+    // 3. Inicializar sección de 1RM
+    inicializar1RM();
+
+    // 4. Renderizar las vistas iniciales
+    renderizarRutinasEntrenar();
+    renderizarRutinasConstructor();
+    renderizarHistorial();
+
+    // 5. Inicializar Constructor de Rutinas (PARTE 2)
+    if (typeof inicializarConstructor === 'function') {
+        inicializarConstructor();
+    }
+
+    // 6. Inicializar Cronómetro (PARTE 3)
+    if (typeof inicializarCronometro === 'function') {
+        inicializarCronometro();
+    }
+
+    console.log('[OK] PowerLifting Tracker - Listo');
+});
+
+
+// ============================================================
+// PARTE 2: BUSCADOR DE EJERCICIOS, CONSTRUCTOR DE RUTINAS
+//          Y GESTIÓN DE PLANTILLAS
+// ============================================================
+
+// Variables de estado local para el buscador y configuración de series
+let categoriaFiltroModal = 'todos';
+let busquedaFiltroModal = '';
+let ejercicioSeleccionadoParaConfig = null;
+let indexEjercicioEnEdicion = null; // null si es nuevo, número si se edita serie en borrador
+
+// ------------------------------------------------------------
+// A. SELECTOR Y BUSCADOR DE EJERCICIOS (MODAL)
+// ------------------------------------------------------------
+
+/**
+ * Renderiza los botones (chips) de categorías en el modal de ejercicios.
+ */
+function renderizarFiltrosCategorias() {
+    const contenedor = document.getElementById('filtros-categoria');
+    if (!contenedor) return;
+
+    // Chip 'Todos' inicial
+    let html = `<button class="filtro-chip ${categoriaFiltroModal === 'todos' ? 'activo' : ''}" data-filtro="todos">Todos</button>`;
+
+    // Chips dinámicos desde APP.catalogoCategorias
+    APP.catalogoCategorias.forEach(cat => {
+        const estaActivo = categoriaFiltroModal === cat.id ? 'activo' : '';
+        html += `<button class="filtro-chip ${estaActivo}" data-filtro="${cat.id}">${cat.icono} ${cat.nombre}</button>`;
+    });
+
+    contenedor.innerHTML = html;
+
+    // Event listeners para los chips
+    contenedor.querySelectorAll('.filtro-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            categoriaFiltroModal = chip.dataset.filtro;
+            contenedor.querySelectorAll('.filtro-chip').forEach(c => c.classList.remove('activo'));
+            chip.classList.add('activo');
+            renderizarCatalogoModal();
+        });
+    });
+}
+
+/**
+ * Normaliza cadenas para búsqueda insensible a acentos y mayúsculas.
+ */
+function normalizarTexto(texto) {
+    return (texto || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Renderiza la lista filtrada de ejercicios dentro del modal de selección.
+ */
+function renderizarCatalogoModal() {
+    const contenedor = document.getElementById('lista-catalogo-ejercicios');
+    if (!contenedor) return;
+
+    const query = normalizarTexto(busquedaFiltroModal);
+
+    // Filtrar catálogo según categoría y búsqueda
+    const ejerciciosFiltrados = APP.catalogoEjercicios.filter(ej => {
+        const coincideCat = (categoriaFiltroModal === 'todos') || (ej.categoria === categoriaFiltroModal);
+        if (!coincideCat) return false;
+
+        if (!query) return true;
+
+        const nombreNorm = normalizarTexto(ej.nombre);
+        const equipNorm = normalizarTexto(ej.equipamiento);
+        const musculosNorm = normalizarTexto((ej.musculosPrincipales || []).join(' '));
+
+        return nombreNorm.includes(query) || equipNorm.includes(query) || musculosNorm.includes(query);
+    });
+
+    if (ejerciciosFiltrados.length === 0) {
+        contenedor.innerHTML = `
+            <div class="empty-state-mini">
+                <p>No se encontraron ejercicios que coincidan con la búsqueda.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Generar items del catálogo
+    contenedor.innerHTML = ejerciciosFiltrados.map(ej => {
+        const icono = obtenerIconoCategoria(ej.categoria);
+        const nombreCat = obtenerNombreCategoria(ej.categoria);
+        const etiquetaBasico = ej.esBasico ? ' • IPF COMP' : '';
+        const etiquetaCustom = ej.esPersonalizado ? ' • PERSONALIZADO' : '';
+
+        return `
+            <div class="catalogo-item" data-id="${ej.id}">
+                <div class="catalogo-item-icono">${icono}</div>
+                <div class="catalogo-item-info">
+                    <div class="catalogo-item-nombre">${ej.nombre}</div>
+                    <div class="catalogo-item-cat">${nombreCat}${etiquetaBasico}${etiquetaCustom}</div>
+                </div>
+                <div class="catalogo-item-add">+</div>
+            </div>
+        `;
+    }).join('');
+
+    // Listener al pulsar un ejercicio del catálogo
+    contenedor.querySelectorAll('.catalogo-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const ejId = item.dataset.id;
+            cerrarModalSelectorEjercicios();
+            abrirModalConfigSeries(ejId);
+        });
+    });
+}
+
+/**
+ * Abre el modal de búsqueda y selección de ejercicios.
+ */
+function abrirModalSelectorEjercicios() {
+    const modal = document.getElementById('modal-ejercicios');
+    const inputBuscar = document.getElementById('input-buscar-ejercicio');
+
+    categoriaFiltroModal = 'todos';
+    busquedaFiltroModal = '';
+
+    if (inputBuscar) {
+        inputBuscar.value = '';
+    }
+
+    renderizarFiltrosCategorias();
+    renderizarCatalogoModal();
+
+    if (modal) {
+        modal.classList.add('activo');
+        if (inputBuscar) {
+            setTimeout(() => inputBuscar.focus(), 150);
+        }
+    }
+}
+
+/**
+ * Cierra el modal de selección de ejercicios.
+ */
+function cerrarModalSelectorEjercicios() {
+    const modal = document.getElementById('modal-ejercicios');
+    if (modal) {
+        modal.classList.remove('activo');
+    }
+}
+
+// ------------------------------------------------------------
+// B. CREACIÓN DE EJERCICIOS PERSONALIZADOS
+// ------------------------------------------------------------
+
+/**
+ * Abre el modal para añadir un nuevo ejercicio personalizado.
+ */
+function abrirModalCustomEjercicio() {
+    const modal = document.getElementById('modal-ejercicio-custom');
+    const inputNombre = document.getElementById('input-custom-nombre');
+    const selectCat = document.getElementById('select-custom-categoria');
+    const inputNotas = document.getElementById('input-custom-notas');
+
+    if (inputNombre) inputNombre.value = '';
+    if (inputNotas) inputNotas.value = '';
+    if (selectCat) selectCat.value = 'squat';
+
+    if (modal) {
+        modal.classList.add('activo');
+        if (inputNombre) setTimeout(() => inputNombre.focus(), 150);
+    }
+}
+
+/**
+ * Cierra el modal de ejercicio personalizado.
+ */
+function cerrarModalCustomEjercicio() {
+    const modal = document.getElementById('modal-ejercicio-custom');
+    if (modal) {
+        modal.classList.remove('activo');
+    }
+}
+
+/**
+ * Valida y guarda un nuevo ejercicio en localStorage y en la lista en memoria.
+ */
+function guardarNuevoEjercicioCustom() {
+    const inputNombre = document.getElementById('input-custom-nombre');
+    const selectCat = document.getElementById('select-custom-categoria');
+    const inputNotas = document.getElementById('input-custom-notas');
+
+    const nombre = inputNombre ? inputNombre.value.trim() : '';
+    const categoria = selectCat ? selectCat.value : 'squat';
+    const notas = inputNotas ? inputNotas.value.trim() : '';
+
+    if (!nombre) {
+        mostrarToast('NOMBRE DE EJERCICIO REQUERIDO');
+        if (inputNombre) inputNombre.focus();
+        return;
+    }
+
+    const nuevoEjercicio = {
+        id: `custom_${generarId()}`,
+        nombre: nombre,
+        categoria: categoria,
+        musculosPrincipales: [],
+        musculosSecundarios: [],
+        equipamiento: 'personalizado',
+        esBasico: false,
+        notas: notas,
+        esPersonalizado: true
+    };
+
+    // Guardar en localStorage
+    const ejerciciosCustom = obtenerEjerciciosCustom();
+    ejerciciosCustom.push(nuevoEjercicio);
+    guardarEjerciciosCustom(ejerciciosCustom);
+
+    // Agregar al catálogo en memoria
+    APP.catalogoEjercicios.push(nuevoEjercicio);
+
+    mostrarToast('EJERCICIO REGISTRADO EN CATÁLOGO');
+    cerrarModalCustomEjercicio();
+
+    // Actualizar catálogo modal y pasar directo a configurar series para la rutina
+    renderizarCatalogoModal();
+    abrirModalConfigSeries(nuevoEjercicio.id);
+}
+
+// ------------------------------------------------------------
+// C. CONFIGURADOR DE SERIES DINÁMICAS (WARM-UP / TOP SET / BACK-OFF)
+// ------------------------------------------------------------
+
+/**
+ * Abre el modal para definir series, reps y RPE de un ejercicio.
+ * @param {string} ejercicioId
+ * @param {number|null} indexEditar - Índice en APP.editorRutina.ejercicios si se está editando
+ */
+function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
+    ejercicioSeleccionadoParaConfig = ejercicioId;
+    indexEjercicioEnEdicion = indexEditar;
+
+    const modal = document.getElementById('modal-config-series');
+    const titulo = document.getElementById('titulo-config-series');
+    const inputWarmup = document.getElementById('input-warmup-series');
+    const inputTop = document.getElementById('input-top-series');
+    const inputBackoff = document.getElementById('input-backoff-series');
+    const inputRepsTop = document.getElementById('input-reps-objetivo');
+    const inputRpeTop = document.getElementById('input-rpe-objetivo');
+    const inputRepsBackoff = document.getElementById('input-reps-backoff');
+
+    const ej = buscarEjercicioPorId(ejercicioId);
+    if (titulo) {
+        titulo.textContent = ej ? ej.nombre : 'Configurar Series';
+    }
+
+    if (indexEditar !== null && APP.editorRutina.ejercicios[indexEditar]) {
+        // Cargar valores existentes del borrador
+        const configExistente = APP.editorRutina.ejercicios[indexEditar].resumenConfig;
+        if (inputWarmup) inputWarmup.value = configExistente.warmup;
+        if (inputTop) inputTop.value = configExistente.topset;
+        if (inputBackoff) inputBackoff.value = configExistente.backoff;
+        if (inputRepsTop) inputRepsTop.value = configExistente.repsTop;
+        if (inputRpeTop) inputRpeTop.value = configExistente.rpeTop;
+        if (inputRepsBackoff) inputRepsBackoff.value = configExistente.repsBackoff;
+    } else {
+        // Valores recomendados por defecto en Powerlifting
+        if (inputWarmup) inputWarmup.value = 2;
+        if (inputTop) inputTop.value = 1;
+        if (inputBackoff) inputBackoff.value = 3;
+        if (inputRepsTop) inputRepsTop.value = 3;
+        if (inputRpeTop) inputRpeTop.value = 8;
+        if (inputRepsBackoff) inputRepsBackoff.value = 5;
+    }
+
+    if (modal) modal.classList.add('activo');
+}
+
+/**
+ * Cierra el modal de configuración de series.
+ */
+function cerrarModalConfigSeries() {
+    const modal = document.getElementById('modal-config-series');
+    if (modal) modal.classList.remove('activo');
+    ejercicioSeleccionadoParaConfig = null;
+    indexEjercicioEnEdicion = null;
+}
+
+/**
+ * Construye la lista de series dinámicas y la incorpora a la rutina actual.
+ */
+function confirmarConfigSeries() {
+    if (!ejercicioSeleccionadoParaConfig) return;
+
+    const warmupCount = Math.max(0, parseInt(document.getElementById('input-warmup-series')?.value) || 0);
+    const topCount = Math.max(0, parseInt(document.getElementById('input-top-series')?.value) || 0);
+    const backoffCount = Math.max(0, parseInt(document.getElementById('input-backoff-series')?.value) || 0);
+
+    const repsTop = Math.max(1, parseInt(document.getElementById('input-reps-objetivo')?.value) || 1);
+    const rpeTop = Math.min(10, Math.max(5, parseFloat(document.getElementById('input-rpe-objetivo')?.value) || 8));
+    const repsBackoff = Math.max(1, parseInt(document.getElementById('input-reps-backoff')?.value) || 1);
+
+    if (warmupCount + topCount + backoffCount === 0) {
+        mostrarToast('CONFIGURA AL MENOS 1 SERIE');
+        return;
+    }
+
+    // Generar la estructura de series individuales para la sesión
+    const seriesConstruidas = [];
+
+    // 1. Series de aproximación (Warm-up)
+    for (let i = 1; i <= warmupCount; i++) {
+        seriesConstruidas.push({
+            tipo: 'warmup',
+            etiqueta: 'Warm-up',
+            repsObjetivo: repsTop + 2,
+            rpeObjetivo: 6,
+            pesoSugerido: 0
+        });
+    }
+
+    // 2. Series principales / pico (Top Set)
+    for (let i = 1; i <= topCount; i++) {
+        seriesConstruidas.push({
+            tipo: 'topset',
+            etiqueta: 'Top Set',
+            repsObjetivo: repsTop,
+            rpeObjetivo: rpeTop,
+            pesoSugerido: 0
+        });
+    }
+
+    // 3. Series efectivas de bajada (Back-off Sets)
+    for (let i = 1; i <= backoffCount; i++) {
+        seriesConstruidas.push({
+            tipo: 'backoff',
+            etiqueta: 'Back-off',
+            repsObjetivo: repsBackoff,
+            rpeObjetivo: Math.max(5, rpeTop - 1),
+            pesoSugerido: 0
+        });
+    }
+
+    const itemEjercicio = {
+        ejercicioId: ejercicioSeleccionadoParaConfig,
+        resumenConfig: {
+            warmup: warmupCount,
+            topset: topCount,
+            backoff: backoffCount,
+            repsTop: repsTop,
+            rpeTop: rpeTop,
+            repsBackoff: repsBackoff
+        },
+        series: seriesConstruidas
+    };
+
+    if (indexEjercicioEnEdicion !== null && indexEjercicioEnEdicion >= 0) {
+        // Reemplazo en posición de edición
+        APP.editorRutina.ejercicios[indexEjercicioEnEdicion] = itemEjercicio;
+        mostrarToast('Series actualizadas');
+    } else {
+        // Añadir nuevo ejercicio al final del borrador
+        APP.editorRutina.ejercicios.push(itemEjercicio);
+        mostrarToast('Ejercicio añadido a la rutina');
+    }
+
+    cerrarModalConfigSeries();
+    renderizarEjerciciosEditor();
+}
+
+// ------------------------------------------------------------
+// D. RENDERIZADO DEL BORRADOR DE EJERCICIOS EN EL EDITOR
+// ------------------------------------------------------------
+
+/**
+ * Pinta la lista de ejercicios añadidos a la rutina en edición.
+ */
+function renderizarEjerciciosEditor() {
+    const contenedor = document.getElementById('lista-ejercicios-rutina');
+    const emptyState = document.getElementById('empty-editor');
+    if (!contenedor || !emptyState) return;
+
+    if (APP.editorRutina.ejercicios.length === 0) {
+        contenedor.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+
+    contenedor.innerHTML = APP.editorRutina.ejercicios.map((item, index) => {
+        const ejInfo = buscarEjercicioPorId(item.ejercicioId);
+        const nombre = ejInfo ? ejInfo.nombre : 'Ejercicio';
+        const cfg = item.resumenConfig;
+
+        const partesResumen = [];
+        if (cfg.warmup > 0) partesResumen.push(`${cfg.warmup} Warm-up`);
+        if (cfg.topset > 0) partesResumen.push(`${cfg.topset} Top Set (${cfg.repsTop} reps @ RPE ${cfg.rpeTop})`);
+        if (cfg.backoff > 0) partesResumen.push(`${cfg.backoff} Back-off (${cfg.repsBackoff} reps)`);
+
+        return `
+            <div class="ejercicio-rutina-card" data-index="${index}">
+                <div class="ejercicio-rutina-info">
+                    <div class="ejercicio-rutina-nombre">${index + 1}. ${nombre}</div>
+                    <div class="ejercicio-rutina-detalles">
+                        <span>${partesResumen.join(' · ')}</span>
+                    </div>
+                </div>
+                <div class="ejercicio-rutina-acciones">
+                    ${index > 0 ? `<button class="btn-mini btn-subir-ej" data-index="${index}" title="Subir">▲</button>` : ''}
+                    ${index < APP.editorRutina.ejercicios.length - 1 ? `<button class="btn-mini btn-bajar-ej" data-index="${index}" title="Bajar">▼</button>` : ''}
+                    <button class="btn-mini btn-config-ej" data-index="${index}" title="Configurar series">CFG</button>
+                    <button class="btn-mini btn-eliminar-ej" data-index="${index}" title="Eliminar">DEL</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Listeners para subir posición
+    contenedor.querySelectorAll('.btn-subir-ej').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.index, 10);
+            if (idx > 0) {
+                const temp = APP.editorRutina.ejercicios[idx];
+                APP.editorRutina.ejercicios[idx] = APP.editorRutina.ejercicios[idx - 1];
+                APP.editorRutina.ejercicios[idx - 1] = temp;
+                renderizarEjerciciosEditor();
+            }
+        });
+    });
+
+    // Listeners para bajar posición
+    contenedor.querySelectorAll('.btn-bajar-ej').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.index, 10);
+            if (idx < APP.editorRutina.ejercicios.length - 1) {
+                const temp = APP.editorRutina.ejercicios[idx];
+                APP.editorRutina.ejercicios[idx] = APP.editorRutina.ejercicios[idx + 1];
+                APP.editorRutina.ejercicios[idx + 1] = temp;
+                renderizarEjerciciosEditor();
+            }
+        });
+    });
+
+    // Listeners para reconfigurar series
+    contenedor.querySelectorAll('.btn-config-ej').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.index, 10);
+            const item = APP.editorRutina.ejercicios[idx];
+            if (item) {
+                abrirModalConfigSeries(item.ejercicioId, idx);
+            }
+        });
+    });
+
+    // Listeners para eliminar ejercicio del borrador
+    contenedor.querySelectorAll('.btn-eliminar-ej').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.index, 10);
+            APP.editorRutina.ejercicios.splice(idx, 1);
+            renderizarEjerciciosEditor();
+            mostrarToast('Ejercicio quitado');
+        });
+    });
+}
+
+// ------------------------------------------------------------
+// E. GUARDADO Y GESTIÓN DE PLANTILLAS DE RUTINAS
+// ------------------------------------------------------------
+
+/**
+ * Abre la pantalla del editor para crear o modificar una rutina.
+ * (Sobrescribe limpiamente el placeholder de la Parte 1)
+ */
+abrirEditorRutina = function(rutinaId = null) {
+    const inputNombre = document.getElementById('input-nombre-rutina');
+    const tituloHeader = document.getElementById('titulo-editor-rutina');
+
+    if (rutinaId) {
+        // Cargar rutina existente para editar
+        const rutinas = obtenerRutinas();
+        const rutina = rutinas.find(r => r.id === rutinaId);
+
+        if (!rutina) {
+            mostrarToast('Error al cargar la rutina');
+            return;
+        }
+
+        APP.editorRutina.id = rutina.id;
+        // Clonar array de ejercicios para no mutar hasta guardar
+        APP.editorRutina.ejercicios = JSON.parse(JSON.stringify(rutina.ejercicios || []));
+
+        if (tituloHeader) tituloHeader.textContent = 'Editar Rutina';
+        if (inputNombre) inputNombre.value = rutina.nombre || '';
+    } else {
+        // Nueva rutina en blanco
+        APP.editorRutina.id = null;
+        APP.editorRutina.ejercicios = [];
+
+        if (tituloHeader) tituloHeader.textContent = 'Nueva Rutina';
+        if (inputNombre) inputNombre.value = '';
+    }
+
+    renderizarEjerciciosEditor();
+    navegarA('vista-editor-rutina');
+};
+
+/**
+ * Valida los datos y guarda la rutina completa en localStorage.
+ */
+function guardarRutina() {
+    const inputNombre = document.getElementById('input-nombre-rutina');
+    const nombre = inputNombre ? inputNombre.value.trim() : '';
+
+    if (!nombre) {
+        mostrarToast('NOMBRE DE PLANTILLA REQUERIDO');
+        if (inputNombre) inputNombre.focus();
+        return;
+    }
+
+    if (APP.editorRutina.ejercicios.length === 0) {
+        mostrarToast('AÑADE AL MENOS 1 EJERCICIO');
+        return;
+    }
+
+    const rutinas = obtenerRutinas();
+
+    if (APP.editorRutina.id) {
+        // Actualizar rutina existente
+        const index = rutinas.findIndex(r => r.id === APP.editorRutina.id);
+        if (index !== -1) {
+            rutinas[index].nombre = nombre;
+            rutinas[index].ejercicios = APP.editorRutina.ejercicios;
+            rutinas[index].ultimaActualizacion = new Date().toISOString();
+        } else {
+            rutinas.push({
+                id: APP.editorRutina.id,
+                nombre: nombre,
+                ejercicios: APP.editorRutina.ejercicios,
+                fechaCreacion: new Date().toISOString()
+            });
+        }
+    } else {
+        // Crear nueva rutina
+        const nuevaRutina = {
+            id: generarId(),
+            nombre: nombre,
+            ejercicios: APP.editorRutina.ejercicios,
+            fechaCreacion: new Date().toISOString()
+        };
+        rutinas.push(nuevaRutina);
+    }
+
+    guardarRutinas(rutinas);
+    mostrarToast('PLANTILLA GUARDADA');
+
+    // Refrescar ambas listas en el DOM
+    renderizarRutinasConstructor();
+    renderizarRutinasEntrenar();
+
+    // Regresar al listado de Mis Rutinas
+    navegarA('vista-constructor');
+}
+
+/**
+ * Gestiona la salida del editor comprobando si hay cambios pendientes.
+ */
+function salirDelEditorRutina() {
+    const inputNombre = document.getElementById('input-nombre-rutina');
+    const nombreActual = inputNombre ? inputNombre.value.trim() : '';
+
+    const tieneCambios = nombreActual.length > 0 || APP.editorRutina.ejercicios.length > 0;
+
+    if (tieneCambios) {
+        mostrarConfirmacion('¿Descartar los cambios de esta rutina?', () => {
+            navegarA('vista-constructor');
+        }, 'Descartar');
+    } else {
+        navegarA('vista-constructor');
+    }
+}
+
+// ------------------------------------------------------------
+// F. INICIALIZACIÓN DE EVENTOS DEL CONSTRUCTOR (PARTE 2)
+// ------------------------------------------------------------
+
+function inicializarConstructor() {
+    // 1. Botón "Nueva" en el constructor
+    const btnNuevaRutina = document.getElementById('btn-nueva-rutina');
+    if (btnNuevaRutina) {
+        btnNuevaRutina.addEventListener('click', () => abrirEditorRutina(null));
+    }
+
+    // 2. Botón volver en la barra superior del editor
+    const btnVolver = document.getElementById('btn-volver-constructor');
+    if (btnVolver) {
+        btnVolver.addEventListener('click', salirDelEditorRutina);
+    }
+
+    // 3. Botón guardar rutina
+    const btnGuardarRutina = document.getElementById('btn-guardar-rutina');
+    if (btnGuardarRutina) {
+        btnGuardarRutina.addEventListener('click', guardarRutina);
+    }
+
+    // 4. Botón "Añadir" ejercicio en el editor
+    const btnAddEjercicio = document.getElementById('btn-añadir-ejercicio');
+    if (btnAddEjercicio) {
+        btnAddEjercicio.addEventListener('click', abrirModalSelectorEjercicios);
+    }
+
+    // 5. Controles del modal de ejercicios
+    const btnCerrarModalEjercicios = document.getElementById('btn-cerrar-modal-ejercicios');
+    if (btnCerrarModalEjercicios) {
+        btnCerrarModalEjercicios.addEventListener('click', cerrarModalSelectorEjercicios);
+    }
+
+    const inputBuscar = document.getElementById('input-buscar-ejercicio');
+    if (inputBuscar) {
+        inputBuscar.addEventListener('input', (e) => {
+            busquedaFiltroModal = e.target.value;
+            renderizarCatalogoModal();
+        });
+    }
+
+    // 6. Modal de ejercicio personalizado
+    const btnCustomModal = document.getElementById('btn-ejercicio-personalizado');
+    if (btnCustomModal) {
+        btnCustomModal.addEventListener('click', () => {
+            cerrarModalSelectorEjercicios();
+            abrirModalCustomEjercicio();
+        });
+    }
+
+    const btnCerrarCustom = document.getElementById('btn-cerrar-modal-custom');
+    if (btnCerrarCustom) {
+        btnCerrarCustom.addEventListener('click', cerrarModalCustomEjercicio);
+    }
+
+    const btnGuardarCustom = document.getElementById('btn-guardar-custom');
+    if (btnGuardarCustom) {
+        btnGuardarCustom.addEventListener('click', guardarNuevoEjercicioCustom);
+    }
+
+    // 7. Modal de configuración de series
+    const btnCerrarConfig = document.getElementById('btn-cerrar-modal-config');
+    if (btnCerrarConfig) {
+        btnCerrarConfig.addEventListener('click', cerrarModalConfigSeries);
+    }
+
+    const btnConfirmarConfig = document.getElementById('btn-confirmar-config-series');
+    if (btnConfirmarConfig) {
+        btnConfirmarConfig.addEventListener('click', confirmarConfigSeries);
+    }
+}
+
+// Ejecutar inicialización si el documento ya está cargado
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    inicializarConstructor();
+}
+
+
+// ============================================================
+// PARTE 3: ENTRENAMIENTO ACTIVO, CRONÓMETRO DE DESCANSO FLOTANTE,
+//          FINALIZACIÓN Y GESTIÓN DEL HISTORIAL
+// ============================================================
+
+// ------------------------------------------------------------
+// A. CRONÓMETRO DE DESCANSO INTEGRADO (FLOTANTE)
+// ------------------------------------------------------------
+
+/**
+ * Emite un bip sonoro utilizando Web Audio API sin librerías externas.
+ */
+function emitirBipFinDescanso() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const ganancia = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime); // La5
+        osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.15); // Re6
+
+        ganancia.gain.setValueAtTime(0.25, ctx.currentTime);
+        ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+
+        osc.connect(ganancia);
+        ganancia.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+    } catch (e) {
+        console.warn('Audio no permitido o no disponible:', e);
+    }
+}
+
+/**
+ * Formatea segundos a formato MM:SS.
+ */
+function formatearMinutosSegundos(totalSegundos) {
+    const minutos = Math.floor(totalSegundos / 60);
+    const segundos = totalSegundos % 60;
+    return `${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+}
+
+/**
+ * Actualiza el texto y la barra de progreso del cronómetro en pantalla.
+ */
+function actualizarVistaCronometro() {
+    const elTiempo = document.getElementById('cronometro-tiempo');
+    const elBarra = document.getElementById('cronometro-barra-progreso');
+
+    if (elTiempo) {
+        elTiempo.textContent = formatearMinutosSegundos(APP.cronometro.segundosRestantes);
+    }
+
+    if (elBarra && APP.cronometro.segundosTotales > 0) {
+        const porcentaje = Math.max(0, Math.min(100, (APP.cronometro.segundosRestantes / APP.cronometro.segundosTotales) * 100));
+        elBarra.style.width = `${porcentaje}%`;
+    }
+}
+
+/**
+ * Ejecuta cada tick de 1 segundo del cronómetro.
+ */
+function tickCronometro() {
+    if (APP.cronometro.pausado) return;
+
+    APP.cronometro.segundosRestantes--;
+
+    if (APP.cronometro.segundosRestantes <= 0) {
+        APP.cronometro.segundosRestantes = 0;
+        clearInterval(APP.cronometro.intervalo);
+        APP.cronometro.intervalo = null;
+        APP.cronometro.activo = false;
+
+        actualizarVistaCronometro();
+
+        // Alerta visual y auditiva
+        const elFlotante = document.getElementById('cronometro-flotante');
+        if (elFlotante) {
+            elFlotante.classList.add('alerta');
+        }
+
+        const btnPausar = document.getElementById('btn-cronometro-pausar');
+        if (btnPausar) {
+            btnPausar.textContent = '▶️';
+        }
+
+        // Vibración háptica en móvil (si el navegador lo permite)
+        if ('vibrate' in navigator) {
+            try {
+                navigator.vibrate([250, 100, 250, 100, 400]);
+            } catch (e) {}
+        }
+
+        emitirBipFinDescanso();
+        mostrarToast('INTERVALO DE DESCANSO FINALIZADO');
+    } else {
+        actualizarVistaCronometro();
+    }
+}
+
+/**
+ * Inicia o reinicia el cronómetro de descanso flotante.
+ * @param {number|null} segundos - Duración opcional en segundos
+ */
+function iniciarCronometro(segundos = null) {
+    if (APP.cronometro.intervalo) {
+        clearInterval(APP.cronometro.intervalo);
+        APP.cronometro.intervalo = null;
+    }
+
+    if (segundos && segundos > 0) {
+        APP.cronometro.segundosTotales = segundos;
+    }
+
+    APP.cronometro.segundosRestantes = APP.cronometro.segundosTotales;
+    APP.cronometro.activo = true;
+    APP.cronometro.pausado = false;
+
+    const elFlotante = document.getElementById('cronometro-flotante');
+    if (elFlotante) {
+        elFlotante.classList.remove('oculto', 'alerta');
+    }
+
+    const btnPausar = document.getElementById('btn-cronometro-pausar');
+    if (btnPausar) {
+        btnPausar.textContent = '⏸️';
+    }
+
+    actualizarVistaCronometro();
+    APP.cronometro.intervalo = setInterval(tickCronometro, 1000);
+}
+
+/**
+ * Pausa o reanuda el cronómetro.
+ */
+function alternarPausaCronometro() {
+    const btnPausar = document.getElementById('btn-cronometro-pausar');
+    const elFlotante = document.getElementById('cronometro-flotante');
+
+    if (!APP.cronometro.activo && APP.cronometro.segundosRestantes === 0) {
+        // Si ya terminó, reiniciar
+        if (elFlotante) elFlotante.classList.remove('alerta');
+        iniciarCronometro(APP.cronometro.segundosTotales);
+        return;
+    }
+
+    APP.cronometro.pausado = !APP.cronometro.pausado;
+
+    if (btnPausar) {
+        btnPausar.textContent = APP.cronometro.pausado ? '▶️' : '⏸️';
+    }
+}
+
+/**
+ * Reinicia el cronómetro al tiempo configurado actualmente.
+ */
+function reiniciarCronometro() {
+    const elFlotante = document.getElementById('cronometro-flotante');
+    if (elFlotante) elFlotante.classList.remove('alerta');
+    iniciarCronometro(APP.cronometro.segundosTotales);
+}
+
+/**
+ * Cierra y detiene el cronómetro flotante.
+ */
+function cerrarCronometro() {
+    if (APP.cronometro.intervalo) {
+        clearInterval(APP.cronometro.intervalo);
+        APP.cronometro.intervalo = null;
+    }
+
+    APP.cronometro.activo = false;
+    APP.cronometro.pausado = false;
+
+    const elFlotante = document.getElementById('cronometro-flotante');
+    if (elFlotante) {
+        elFlotante.classList.add('oculto');
+        elFlotante.classList.remove('alerta');
+    }
+}
+
+/**
+ * Inicializa todos los eventos del cronómetro flotante.
+ */
+function inicializarCronometro() {
+    const btnPausar = document.getElementById('btn-cronometro-pausar');
+    if (btnPausar) btnPausar.addEventListener('click', alternarPausaCronometro);
+
+    const btnReset = document.getElementById('btn-cronometro-reset');
+    if (btnReset) btnReset.addEventListener('click', reiniciarCronometro);
+
+    const btnCerrar = document.getElementById('btn-cronometro-cerrar');
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrarCronometro);
+
+    // Botones rápidos de selección de tiempo (3 min, 5 min, 8 min)
+    const botonesTiempo = document.querySelectorAll('.btn-tiempo');
+    botonesTiempo.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const seg = parseInt(btn.dataset.tiempo, 10);
+            if (!isNaN(seg)) {
+                APP.cronometro.segundosTotales = seg;
+                botonesTiempo.forEach(b => b.classList.remove('activo'));
+                btn.classList.add('activo');
+                iniciarCronometro(seg);
+            }
+        });
+    });
+}
+
+// ------------------------------------------------------------
+// B. INICIAR ENTRENAMIENTO ACTIVO Y CÁLCULO DE % 1RM
+// ------------------------------------------------------------
+
+/**
+ * Calcula el peso estimado por defecto para una serie según el 1RM o el ejercicio.
+ */
+function obtenerPesoInicialSugerido(ejercicio, tipoSerie, marcas1RM) {
+    const tipo1rm = obtenerTipo1RM(ejercicio.categoria);
+    const rm = tipo1rm ? (marcas1RM[tipo1rm] || 0) : 0;
+
+    if (rm > 0) {
+        if (tipoSerie === 'warmup') {
+            return Math.max(20, Math.round((rm * 0.5) / 2.5) * 2.5);
+        } else if (tipoSerie === 'topset') {
+            return Math.max(20, Math.round((rm * 0.8) / 2.5) * 2.5);
+        } else if (tipoSerie === 'backoff') {
+            return Math.max(20, Math.round((rm * 0.7) / 2.5) * 2.5);
+        }
+    }
+
+    // Valores por defecto seguros sin 1RM
+    if (ejercicio.categoria === 'squat') return tipoSerie === 'warmup' ? 60 : 100;
+    if (ejercicio.categoria === 'bench') return tipoSerie === 'warmup' ? 40 : 70;
+    if (ejercicio.categoria === 'deadlift') return tipoSerie === 'warmup' ? 70 : 120;
+    return 20; // Accesorios con mancuerna o barra ligera
+}
+
+/**
+ * Actualiza la etiqueta de porcentaje de 1RM en la cabecera de un bloque de ejercicio.
+ */
+function actualizarPorcentajeBloque(bloqueElemento, ejercicioCategoria, marcas1RM) {
+    const tipo1rm = obtenerTipo1RM(ejercicioCategoria);
+    const etiquetaPct = bloqueElemento.querySelector('.ejercicio-porcentaje');
+    if (!etiquetaPct || !tipo1rm) return;
+
+    const rm = marcas1RM[tipo1rm] || 0;
+    if (rm <= 0) {
+        etiquetaPct.textContent = '';
+        return;
+    }
+
+    // Encontrar el peso más alto entre las series del bloque (priorizando el Top Set)
+    const inputsPeso = bloqueElemento.querySelectorAll('.input-peso');
+    let maxPeso = 0;
+    inputsPeso.forEach(input => {
+        const p = parseFloat(input.value) || 0;
+        if (p > maxPeso) maxPeso = p;
+    });
+
+    if (maxPeso > 0) {
+        const pct = calcularPorcentaje1RM(maxPeso, rm);
+        etiquetaPct.textContent = `@ ${pct}% de 1RM (${maxPeso} kg)`;
+    } else {
+        etiquetaPct.textContent = `@ 1RM: ${rm} kg`;
+    }
+}
+
+/**
+ * Arranca la pantalla de entrenamiento activo a partir de una rutina guardada.
+ * (Sobrescribe limpiamente el placeholder de la Parte 1)
+ */
+iniciarEntrenamiento = function(rutinaId) {
+    const rutinas = obtenerRutinas();
+    const rutina = rutinas.find(r => r.id === rutinaId);
+
+    if (!rutina) {
+        mostrarToast('Error: No se encontró la rutina seleccionada');
+        return;
+    }
+
+    if (!rutina.ejercicios || rutina.ejercicios.length === 0) {
+        mostrarToast('Esta rutina no tiene ejercicios configurados');
+        return;
+    }
+
+    const marcas1RM = obtenerMarcas1RM();
+
+    // Guardar estado del entrenamiento activo
+    APP.entrenamientoActivo = {
+        rutinaId: rutina.id,
+        rutinaNombre: rutina.nombre,
+        fechaInicio: new Date().toISOString(),
+        ejercicios: []
+    };
+
+    // Actualizar encabezados
+    const elTitulo = document.getElementById('titulo-entrenamiento');
+    const elFecha = document.getElementById('fecha-entrenamiento');
+    if (elTitulo) elTitulo.textContent = rutina.nombre;
+    if (elFecha) elFecha.textContent = fechaHoy();
+
+    const contenedor = document.getElementById('contenido-entrenamiento');
+    if (!contenedor) return;
+
+    // Generar la hoja completa de entrenamiento
+    contenedor.innerHTML = rutina.ejercicios.map((ejConfig, indexEj) => {
+        const ejInfo = buscarEjercicioPorId(ejConfig.ejercicioId) || {
+            nombre: ejConfig.ejercicioId,
+            categoria: 'accesorio_pierna'
+        };
+
+        const tipo1rm = obtenerTipo1RM(ejInfo.categoria);
+        const tiene1RM = tipo1rm && marcas1RM[tipo1rm] > 0;
+
+        // Construir tarjetas para cada serie
+        const seriesHtml = (ejConfig.series || []).map((serie, indexSerie) => {
+            const esTopSet = serie.tipo === 'topset';
+            const esWarmup = serie.tipo === 'warmup';
+            const claseCard = esTopSet ? 'serie-topset' : (esWarmup ? 'serie-warmup' : 'serie-backoff');
+            const etiquetaTipo = esTopSet ? 'Top Set' : (esWarmup ? 'Warm-up' : 'Back-off');
+
+            const pesoSugerido = obtenerPesoInicialSugerido(ejInfo, serie.tipo, marcas1RM);
+            const repsSugeridas = serie.repsObjetivo || (esTopSet ? 3 : 5);
+            const rpeSugerido = serie.rpeObjetivo || (esTopSet ? 8 : 6);
+
+            return `
+                <div class="serie-card ${claseCard}" data-ej-index="${indexEj}" data-serie-index="${indexSerie}" data-tipo="${serie.tipo}">
+                    <div class="serie-header">
+                        <span class="serie-tipo">${etiquetaTipo}</span>
+                        <span class="serie-numero">Serie ${indexSerie + 1}</span>
+                    </div>
+                    <div class="serie-inputs">
+                        <div class="campo-grupo">
+                            <label>Peso (kg)</label>
+                            <div class="stepper">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-2.5">−</button>
+                                <input type="number" class="input-peso" value="${pesoSugerido}" step="2.5" min="0" inputmode="decimal">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="2.5">+</button>
+                            </div>
+                        </div>
+                        <div class="campo-grupo">
+                            <label>Reps</label>
+                            <div class="stepper">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-1">−</button>
+                                <input type="number" class="input-reps" value="${repsSugeridas}" step="1" min="1" max="50" inputmode="numeric">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="1">+</button>
+                            </div>
+                        </div>
+                        <div class="campo-grupo">
+                            <label>RPE</label>
+                            <div class="stepper stepper-rpe">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-0.5">−</button>
+                                <input type="number" class="input-rpe" value="${rpeSugerido}" step="0.5" min="5" max="10" inputmode="decimal">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="0.5">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-check" aria-label="Completar serie"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETAR</button>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="bloque-ejercicio" data-ej-id="${ejInfo.id}" data-categoria="${ejInfo.categoria}">
+                <div class="bloque-ejercicio-header">
+                    <h2 class="ejercicio-nombre">${indexEj + 1}. ${ejInfo.nombre}</h2>
+                    <span class="ejercicio-porcentaje">${tiene1RM ? `@ 1RM: ${marcas1RM[tipo1rm]} kg` : ''}</span>
+                </div>
+                <div class="series-lista">
+                    ${seriesHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Calcular porcentajes iniciales de los bloques
+    contenedor.querySelectorAll('.bloque-ejercicio').forEach(bloque => {
+        const cat = bloque.dataset.categoria;
+        actualizarPorcentajeBloque(bloque, cat, marcas1RM);
+    });
+
+    navegarA('vista-entrenamiento');
+    mostrarToast('SESIÓN INICIADA');
+};
+
+// ------------------------------------------------------------
+// C. DELEGACIÓN DE EVENTOS EN EL ENTRENAMIENTO ACTIVO
+// ------------------------------------------------------------
+
+function inicializarEventosEntrenamientoActivo() {
+    const contenedor = document.getElementById('contenido-entrenamiento');
+    if (!contenedor) return;
+
+    // 1. Escuchar cambios de peso para actualizar el % 1RM en vivo
+    contenedor.addEventListener('input', (e) => {
+        if (e.target.classList.contains('input-peso')) {
+            const bloque = e.target.closest('.bloque-ejercicio');
+            if (bloque) {
+                const cat = bloque.dataset.categoria;
+                const marcas = obtenerMarcas1RM();
+                actualizarPorcentajeBloque(bloque, cat, marcas);
+            }
+        }
+    });
+
+    // 2. Click en botón "Check" de serie completada
+    contenedor.addEventListener('click', (e) => {
+        const btnCheck = e.target.closest('.btn-check');
+        if (!btnCheck) return;
+
+        const card = btnCheck.closest('.serie-card');
+        if (!card) return;
+
+        const estaCompletada = card.classList.contains('completada');
+
+        if (!estaCompletada) {
+            // Marcar completada
+            card.classList.add('completada');
+            btnCheck.classList.add('checked');
+            btnCheck.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETADA';
+
+            // Activar automáticamente el cronómetro de descanso flotante
+            iniciarCronometro();
+
+            // Comprobar si todas las series del entrenamiento están completadas
+            const todasLasSeries = contenedor.querySelectorAll('.serie-card');
+            const completadas = contenedor.querySelectorAll('.serie-card.completada');
+
+            if (todasLasSeries.length === completadas.length) {
+                mostrarToast('TODAS LAS SERIES COMPLETADAS');
+            } else {
+                mostrarToast('SERIE REGISTRADA · DESCANSO INICIADO');
+            }
+        } else {
+            // Desmarcar si el usuario pulsó por error
+            card.classList.remove('completada');
+            btnCheck.classList.remove('checked');
+            btnCheck.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETAR';
+        }
+    });
+
+    // 3. Botón "Volver" en la cabecera del entrenamiento activo
+    const btnVolver = document.getElementById('btn-volver-entrenar');
+    if (btnVolver) {
+        btnVolver.addEventListener('click', () => {
+            mostrarConfirmacion('¿Salir del entrenamiento? Los datos de la sesión actual no se guardarán.', () => {
+                cerrarCronometro();
+                navegarA('vista-entrenar');
+            }, 'Salir');
+        });
+    }
+
+    // 4. Botón "Finalizar" entrenamiento
+    const btnFinalizar = document.getElementById('btn-finalizar-entrenamiento');
+    if (btnFinalizar) {
+        btnFinalizar.addEventListener('click', finalizarEntrenamiento);
+    }
+}
+
+// ------------------------------------------------------------
+// D. FINALIZACIÓN DE SESIÓN Y PERSISTENCIA EN HISTORIAL
+// ------------------------------------------------------------
+
+/**
+ * Recopila todos los datos de la sesión activa, los guarda en el historial y redirige.
+ */
+function finalizarEntrenamiento() {
+    const contenedor = document.getElementById('contenido-entrenamiento');
+    if (!contenedor) return;
+
+    const bloques = contenedor.querySelectorAll('.bloque-ejercicio');
+    const ejerciciosResultado = [];
+    let totalSeriesCompletadas = 0;
+    let volumenTotalKg = 0;
+
+    bloques.forEach(bloque => {
+        const ejId = bloque.dataset.ejId;
+        const ejInfo = buscarEjercicioPorId(ejId);
+        const seriesCards = bloque.querySelectorAll('.serie-card');
+        const seriesData = [];
+
+        seriesCards.forEach(card => {
+            const inputPeso = card.querySelector('.input-peso');
+            const inputReps = card.querySelector('.input-reps');
+            const inputRpe = card.querySelector('.input-rpe');
+
+            const peso = parseFloat(inputPeso?.value) || 0;
+            const reps = parseInt(inputReps?.value, 10) || 0;
+            const rpe = parseFloat(inputRpe?.value) || 0;
+            const completada = card.classList.contains('completada');
+            const tipo = card.dataset.tipo || 'warmup';
+
+            if (completada) {
+                totalSeriesCompletadas++;
+                volumenTotalKg += (peso * reps);
+            }
+
+            seriesData.push({
+                tipo: tipo,
+                peso: peso,
+                reps: reps,
+                rpe: rpe,
+                completada: completada
+            });
+        });
+
+        ejerciciosResultado.push({
+            ejercicioId: ejId,
+            nombre: ejInfo ? ejInfo.nombre : ejId,
+            categoria: ejInfo ? ejInfo.categoria : 'accesorio_pierna',
+            series: seriesData
+        });
+    });
+
+    if (totalSeriesCompletadas === 0) {
+        mostrarConfirmacion('No has marcado ninguna serie como completada. ¿Guardar la sesión de todos modos?', () => {
+            guardarSesionEnHistorial(ejerciciosResultado, 0, 0);
+        }, 'Guardar');
+        return;
+    }
+
+    guardarSesionEnHistorial(ejerciciosResultado, totalSeriesCompletadas, volumenTotalKg);
+}
+
+/**
+ * Guarda el objeto de sesión formateado en localStorage y navega al historial.
+ */
+function guardarSesionEnHistorial(ejercicios, seriesCompletadas, volumenKg) {
+    const ahora = new Date();
+    const fechaInicio = APP.entrenamientoActivo.fechaInicio ? new Date(APP.entrenamientoActivo.fechaInicio) : ahora;
+    const duracionMinutos = Math.max(1, Math.round((ahora - fechaInicio) / 60000));
+
+    const nuevaSesion = {
+        id: generarId(),
+        rutinaId: APP.entrenamientoActivo.rutinaId,
+        rutinaNombre: APP.entrenamientoActivo.rutinaNombre || 'Entrenamiento Libre',
+        fecha: ahora.toISOString(),
+        duracionMinutos: duracionMinutos,
+        totalSeriesCompletadas: seriesCompletadas,
+        volumenTotalKg: Math.round(volumenKg * 10) / 10,
+        ejercicios: ejercicios
+    };
+
+    const historial = obtenerHistorial();
+    historial.unshift(nuevaSesion); // Sesión más reciente al principio
+    guardarHistorial(historial);
+
+    cerrarCronometro();
+
+    mostrarToast(`SESIÓN FINALIZADA · VOLUMEN: ${nuevaSesion.volumenTotalKg} KG`);
+
+    // Actualizar vistas
+    renderizarHistorial();
+
+    // Activar pestaña Historial dentro de la vista Historial
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t => {
+        if (t.dataset.tab === 'tab-historial') t.classList.add('activo');
+        else t.classList.remove('activo');
+    });
+    const contHistorial = document.getElementById('tab-historial');
+    const cont1rm = document.getElementById('tab-1rm');
+    if (contHistorial) contHistorial.classList.add('activo');
+    if (cont1rm) cont1rm.classList.remove('activo');
+
+    navegarA('vista-historial');
+}
+
+// ------------------------------------------------------------
+// E. MODAL DE DETALLE DE SESIÓN Y ELIMINACIÓN DE HISTORIAL
+// ------------------------------------------------------------
+
+/**
+ * Abre el modal con el detalle completo de un entrenamiento realizado.
+ * (Sobrescribe limpiamente el placeholder de la Parte 1)
+ */
+abrirDetalleSesion = function(sesionId) {
+    const historial = obtenerHistorial();
+    const sesion = historial.find(s => s.id === sesionId);
+    if (!sesion) {
+        mostrarToast('Error al abrir la sesión');
+        return;
+    }
+
+    APP.sesionSeleccionadaId = sesionId;
+
+    const modal = document.getElementById('modal-detalle-sesion');
+    const titulo = document.getElementById('titulo-detalle-sesion');
+    const contenedor = document.getElementById('contenido-detalle-sesion');
+
+    const f = formatearFecha(sesion.fecha);
+
+    if (titulo) {
+        titulo.textContent = sesion.rutinaNombre || 'Detalle de Sesión';
+    }
+
+    if (contenedor) {
+        let ejerciciosHtml = '';
+
+        (sesion.ejercicios || []).forEach(ej => {
+            const seriesHtml = (ej.series || []).map((serie, idx) => {
+                const tipoClase = serie.tipo === 'topset' ? 'serie-topset' : (serie.tipo === 'warmup' ? 'serie-warmup' : 'serie-backoff');
+                const tipoTexto = serie.tipo === 'topset' ? 'Top Set' : (serie.tipo === 'warmup' ? 'Warm-up' : 'Back-off');
+                const estadoIcono = serie.completada ? 'OK' : '--';
+                const estadoColor = serie.completada ? 'var(--verde)' : 'var(--gris-medio)';
+
+                return `
+                    <div class="detalle-serie">
+                        <span class="tarjeta-badge ${tipoClase} detalle-serie-tipo">${tipoTexto}</span>
+                        <div class="detalle-serie-datos">
+                            <span class="detalle-serie-valor"><strong>${serie.peso}</strong> <span>kg</span></span>
+                            <span class="detalle-serie-valor"><strong>${serie.reps}</strong> <span>reps</span></span>
+                            <span class="detalle-serie-valor"><strong>@${serie.rpe}</strong> <span>RPE</span></span>
+                        </div>
+                        <span style="color: ${estadoColor}; font-weight: bold; font-size: 1.1rem;">${estadoIcono}</span>
+                    </div>
+                `;
+            }).join('');
+
+            ejerciciosHtml += `
+                <div class="detalle-ejercicio">
+                    <h3 class="detalle-ejercicio-nombre">${ej.nombre}</h3>
+                    <div class="detalle-ejercicio-series">
+                        ${seriesHtml}
+                    </div>
+                </div>
+            `;
+        });
+
+        contenedor.innerHTML = `
+            <div style="background-color: var(--superficie); border-radius: var(--radio-md); padding: var(--espacio-md); margin-bottom: var(--espacio-lg); border: 1px solid var(--borde);">
+                <p style="font-size: 0.85rem; color: var(--gris-claro); margin-bottom: 4px;">FECHA: ${f.completa.toUpperCase()}</p>
+                <p style="font-size: 0.85rem; color: var(--blanco);">DURACIÓN: <strong>${sesion.duracionMinutos || 0} min</strong> · Series: <strong>${sesion.totalSeriesCompletadas || 0}</strong> · Volumen: <strong>${sesion.volumenTotalKg || 0} kg</strong></p>
+            </div>
+            ${ejerciciosHtml}
+        `;
+    }
+
+    if (modal) {
+        modal.classList.add('activo');
+    }
+};
+
+/**
+ * Inicializa los eventos del modal de detalle de sesión.
+ */
+function inicializarModalDetalleSesion() {
+    const modal = document.getElementById('modal-detalle-sesion');
+    const btnCerrar = document.getElementById('btn-cerrar-modal-detalle');
+    const btnEliminar = document.getElementById('btn-eliminar-sesion');
+
+    if (btnCerrar) {
+        btnCerrar.addEventListener('click', () => {
+            if (modal) modal.classList.remove('activo');
+            APP.sesionSeleccionadaId = null;
+        });
+    }
+
+    if (btnEliminar) {
+        btnEliminar.addEventListener('click', () => {
+            if (!APP.sesionSeleccionadaId) return;
+
+            mostrarConfirmacion('¿Seguro que deseas eliminar esta sesión del historial?', () => {
+                let historial = obtenerHistorial();
+                historial = historial.filter(s => s.id !== APP.sesionSeleccionadaId);
+                guardarHistorial(historial);
+
+                if (modal) modal.classList.remove('activo');
+                APP.sesionSeleccionadaId = null;
+
+                renderizarHistorial();
+                mostrarToast('Sesión eliminada del historial');
+            }, 'Eliminar');
+        });
+    }
+}
+
+// ------------------------------------------------------------
+// F. INICIALIZACIÓN FINAL DEL BLOQUE 3
+// ------------------------------------------------------------
+
+function inicializarParte3() {
+    inicializarCronometro();
+    inicializarEventosEntrenamientoActivo();
+    inicializarModalDetalleSesion();
+}
+
+// Ejecutar inicialización si el DOM ya está listo
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    inicializarParte3();
+}
+
+
+// ============================================================
+// PARCHE DE AUDITORÍA QA: DELEGACIÓN GLOBAL DE EVENTOS
+// Y ARRANQUE DEFINITIVO UNIFICADO (initApp)
+// ============================================================
+
+/**
+ * Cierra cualquier modal al pulsar en el fondo oscuro exterior.
+ */
+function inicializarCierreModalesBackdrop() {
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('activo');
+                if (modal.id === 'modal-confirmar') {
+                    APP.confirmarCallback = null;
+                }
+                if (modal.id === 'modal-detalle-sesion') {
+                    APP.sesionSeleccionadaId = null;
+                }
+            }
+        });
+    });
+}
+
+/**
+ * Delegación permanente para las tarjetas de rutinas en la vista Entrenar.
+ */
+function inicializarDelegacionRutinasEntrenar() {
+    const contenedor = document.getElementById('lista-rutinas-entrenar');
+    if (!contenedor) return;
+
+    contenedor.addEventListener('click', (e) => {
+        const tarjeta = e.target.closest('.tarjeta');
+        if (!tarjeta) return;
+
+        const rutinaId = tarjeta.dataset.rutinaId;
+        if (rutinaId) {
+            iniciarEntrenamiento(rutinaId);
+        }
+    });
+}
+
+/**
+ * Delegación permanente para las tarjetas de rutinas en el Constructor.
+ */
+function inicializarDelegacionRutinasConstructor() {
+    const contenedor = document.getElementById('lista-rutinas-constructor');
+    if (!contenedor) return;
+
+    contenedor.addEventListener('click', (e) => {
+        const btnEditar = e.target.closest('.btn-editar-rutina');
+        const btnEliminar = e.target.closest('.btn-eliminar-rutina');
+
+        if (btnEditar) {
+            e.stopPropagation();
+            abrirEditorRutina(btnEditar.dataset.rutinaId);
+            return;
+        }
+
+        if (btnEliminar) {
+            e.stopPropagation();
+            const rutinaId = btnEliminar.dataset.rutinaId;
+            mostrarConfirmacion('¿Eliminar esta rutina?', () => {
+                let rutinas = obtenerRutinas().filter(r => r.id !== rutinaId);
+                guardarRutinas(rutinas);
+                renderizarRutinasConstructor();
+                renderizarRutinasEntrenar();
+                mostrarToast('Rutina eliminada');
+            });
+        }
+    });
+}
+
+/**
+ * Delegación permanente para el listado de sesiones en Historial.
+ */
+function inicializarDelegacionHistorial() {
+    const contenedor = document.getElementById('lista-historial');
+    if (!contenedor) return;
+
+    contenedor.addEventListener('click', (e) => {
+        const card = e.target.closest('.historial-card');
+        if (card && card.dataset.sesionId) {
+            abrirDetalleSesion(card.dataset.sesionId);
+        }
+    });
+}
+
+/**
+ * Vincula los inputs de 1RM para actualizar la tabla de porcentajes en tiempo real.
+ */
+function inicializarLiveUpdate1RM() {
+    ['input-1rm-squat', 'input-1rm-bench', 'input-1rm-deadlift'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', () => {
+                const tipo = id.replace('input-1rm-', '');
+                const selectCalc = document.getElementById('calc-ejercicio');
+                if (selectCalc && selectCalc.value === tipo) {
+                    const marcas = obtenerMarcas1RM();
+                    marcas[tipo] = parseFloat(input.value) || 0;
+                    guardarMarcas1RM(marcas);
+                    actualizarTabla1RM();
+                }
+            });
+        }
+    });
+}
+
+/**
+ * INICIALIZACIÓN DEFINITIVA Y UNIFICADA (initApp).
+ * Se encarga de arrancar todos los módulos de las Partes 1, 2 y 3 sin condiciones de carrera.
+ */
+async function initApp() {
+    console.log('[INIT] [QA Engine] Inicializando PowerLifting Tracker...');
+
+    // 1. Cargar el catálogo JSON + personalizados
+    await cargarCatalogoEjercicios();
+
+    // 2. Sistemas base de interfaz
+    inicializarNavegacion();
+    inicializarTabs();
+    inicializarSteppers();
+    inicializarModalConfirmar();
+    inicializarCierreModalesBackdrop();
+
+    // 3. Módulo 1RM y calculadora
+    inicializar1RM();
+    inicializarLiveUpdate1RM();
+
+    // 4. Módulo Constructor de Rutinas (Parte 2)
+    if (typeof inicializarConstructor === 'function') {
+        inicializarConstructor();
+    }
+
+    // 5. Módulo Entrenamiento Activo y Cronómetro (Parte 3)
+    if (typeof inicializarCronometro === 'function') {
+        inicializarCronometro();
+    }
+    if (typeof inicializarEventosEntrenamientoActivo === 'function') {
+        inicializarEventosEntrenamientoActivo();
+    }
+    if (typeof inicializarModalDetalleSesion === 'function') {
+        inicializarModalDetalleSesion();
+    }
+
+    // 6. Delegaciones permanentes de eventos dinámicos
+    inicializarDelegacionRutinasEntrenar();
+    inicializarDelegacionRutinasConstructor();
+    inicializarDelegacionHistorial();
+
+    // 7. Renderizado inicial de vistas
+    renderizarRutinasEntrenar();
+    renderizarRutinasConstructor();
+    renderizarHistorial();
+
+    console.log('[OK] [QA Engine] Todos los botones y eventos quedaron conectados correctamente.');
+}
+
+// Disparo seguro e inmediato de la inicialización unificada
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
