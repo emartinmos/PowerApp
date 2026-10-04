@@ -42,7 +42,10 @@ const APP = {
     confirmarCallback: null,
 
     // Sesión seleccionada en historial para detalle/eliminar
-    sesionSeleccionadaId: null
+    sesionSeleccionadaId: null,
+
+    // Sesión cargada en modo edición
+    sesionEnEdicion: null
 };
 
 
@@ -592,8 +595,9 @@ function mostrarToast(mensaje, duracion = 2500) {
  * @param {string} texto - Pregunta a mostrar
  * @param {Function} onConfirmar - Función a ejecutar si el usuario acepta
  * @param {string} textoBoton - Texto del botón de acción (por defecto "Eliminar")
+ * @param {string} claseBoton - Clase de estilo para el botón (por defecto "btn-danger")
  */
-function mostrarConfirmacion(texto, onConfirmar, textoBoton = 'Eliminar') {
+function mostrarConfirmacion(texto, onConfirmar, textoBoton = 'Eliminar', claseBoton = 'btn-danger') {
     const modal = document.getElementById('modal-confirmar');
     const textoEl = document.getElementById('texto-confirmar');
     const btnAceptar = document.getElementById('btn-aceptar-confirmar');
@@ -602,6 +606,7 @@ function mostrarConfirmacion(texto, onConfirmar, textoBoton = 'Eliminar') {
 
     textoEl.textContent = texto;
     btnAceptar.textContent = textoBoton;
+    btnAceptar.className = `btn ${claseBoton}`;
     APP.confirmarCallback = onConfirmar;
     modal.classList.add('activo');
 }
@@ -781,6 +786,63 @@ function calcularYActualizar1RM(sesion) {
     }
 
     return nuevosRecords;
+}
+
+/**
+ * Recalcula desde cero todos los 1RM y e1RM recorriendo todo el historial.
+ * Vital cuando se edita un peso erróneo a la baja o se elimina una sesión.
+ * @returns {Object} Marcas 1RM actualizadas
+ */
+function recalcularTodosLos1RM() {
+    const historial = obtenerHistorial();
+    const nuevasMarcas = {
+        squat: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null },
+        bench: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null },
+        deadlift: { pr: 0, e1rm: 0, fechaPR: null, fechaE1RM: null }
+    };
+
+    // Ordenar cronológicamente para que las fechas de récord reflejen el orden temporal
+    const historialCronologico = [...historial].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+    historialCronologico.forEach(sesion => {
+        const fechaSesion = sesion.fecha || new Date().toISOString();
+        (sesion.ejercicios || []).forEach(ej => {
+            let tipo = obtenerTipo1RM(ej.categoria);
+            if (!tipo && ej.ejercicioId) {
+                const info = buscarEjercicioPorId(ej.ejercicioId);
+                if (info) tipo = obtenerTipo1RM(info.categoria);
+            }
+            if (!tipo || !nuevasMarcas[tipo]) return;
+
+            (ej.series || []).forEach(serie => {
+                if (!serie.completada) return;
+
+                const peso = parseFloat(serie.peso) || 0;
+                const reps = parseInt(serie.reps, 10) || 0;
+                const rpe = parseFloat(serie.rpe) || 10;
+                if (peso <= 0 || reps <= 0) return;
+
+                const e1rmCalc = calcularE1RM(peso, reps, rpe);
+
+                // PR Real
+                if (peso > (nuevasMarcas[tipo].pr || 0)) {
+                    nuevasMarcas[tipo].pr = peso;
+                    nuevasMarcas[tipo].fechaPR = fechaSesion;
+                }
+
+                // e1RM Estimado
+                if (e1rmCalc > (nuevasMarcas[tipo].e1rm || 0)) {
+                    nuevasMarcas[tipo].e1rm = e1rmCalc;
+                    nuevasMarcas[tipo].fechaE1RM = fechaSesion;
+                }
+            });
+        });
+    });
+
+    guardarMarcas1RM(nuevasMarcas);
+    renderizar1RM();
+    actualizarTabla1RM();
+    return nuevasMarcas;
 }
 
 /**
@@ -1173,18 +1235,18 @@ function renderizarHistorial() {
                 </div>
                 <div class="historial-info">
                     <p class="historial-nombre">${sesion.rutinaNombre || 'Entrenamiento'}</p>
-                    <p class="historial-resumen">${numEjercicios} ejercicio${numEjercicios !== 1 ? 's' : ''} · ${totalSeries} series</p>
+                    <p class="historial-resumen">${numEjercicios} ejercicio${numEjercicios !== 1 ? 's' : ''} · ${totalSeries} series · ${sesion.volumenTotalKg || 0} kg</p>
                 </div>
                 <span class="historial-flecha">›</span>
             </div>
         `;
     }).join('');
 
-    // Event listeners para ver detalle
+    // Event listeners para ver detalle (preview de la sesión)
     contenedor.querySelectorAll('.historial-card').forEach(card => {
         card.addEventListener('click', () => {
             const sesionId = card.dataset.sesionId;
-            abrirDetalleSesion(sesionId); // Se define en PARTE 3
+            abrirDetalleSesion(sesionId);
         });
     });
 }
@@ -2114,9 +2176,11 @@ function iniciarCronometro(segundos = null) {
 
     if (segundos && segundos > 0) {
         APP.cronometro.segundosTotales = segundos;
+        APP.cronometro.segundosRestantes = segundos;
+    } else if (APP.cronometro.segundosRestantes <= 0) {
+        APP.cronometro.segundosRestantes = APP.cronometro.segundosTotales;
     }
 
-    APP.cronometro.segundosRestantes = APP.cronometro.segundosTotales;
     APP.cronometro.activo = true;
     APP.cronometro.pausado = false;
 
@@ -2128,6 +2192,7 @@ function iniciarCronometro(segundos = null) {
     const btnPausar = document.getElementById('btn-cronometro-pausar');
     if (btnPausar) {
         btnPausar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/></svg>';
+        btnPausar.setAttribute('aria-label', 'Pausar cronómetro');
     }
 
     actualizarVistaCronometro();
@@ -2141,19 +2206,24 @@ function alternarPausaCronometro() {
     const btnPausar = document.getElementById('btn-cronometro-pausar');
     const elFlotante = document.getElementById('cronometro-flotante');
 
-    if (!APP.cronometro.activo && APP.cronometro.segundosRestantes === 0) {
-        // Si ya terminó, reiniciar
+    // Si el cronómetro no está en marcha, arrancarlo
+    if (!APP.cronometro.activo) {
         if (elFlotante) elFlotante.classList.remove('alerta');
-        iniciarCronometro(APP.cronometro.segundosTotales);
+        const seg = (APP.cronometro.segundosRestantes > 0)
+            ? APP.cronometro.segundosRestantes
+            : APP.cronometro.segundosTotales;
+        iniciarCronometro(seg);
         return;
     }
 
+    // Si ya está activo, alternar pausa/reanudación
     APP.cronometro.pausado = !APP.cronometro.pausado;
 
     if (btnPausar) {
         btnPausar.innerHTML = APP.cronometro.pausado
             ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
             : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/></svg>';
+        btnPausar.setAttribute('aria-label', APP.cronometro.pausado ? 'Reanudar cronómetro' : 'Pausar cronómetro');
     }
 }
 
@@ -2163,7 +2233,12 @@ function alternarPausaCronometro() {
 function reiniciarCronometro() {
     const elFlotante = document.getElementById('cronometro-flotante');
     if (elFlotante) elFlotante.classList.remove('alerta');
-    iniciarCronometro(APP.cronometro.segundosTotales);
+    if (APP.cronometro.activo) {
+        iniciarCronometro(APP.cronometro.segundosTotales);
+    } else {
+        APP.cronometro.segundosRestantes = APP.cronometro.segundosTotales;
+        actualizarVistaCronometro();
+    }
 }
 
 /**
@@ -2182,6 +2257,12 @@ function cerrarCronometro() {
     if (elFlotante) {
         elFlotante.classList.add('oculto');
         elFlotante.classList.remove('alerta');
+    }
+
+    const btnPausar = document.getElementById('btn-cronometro-pausar');
+    if (btnPausar) {
+        btnPausar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+        btnPausar.setAttribute('aria-label', 'Iniciar cronómetro');
     }
 }
 
@@ -2434,9 +2515,6 @@ function inicializarEventosEntrenamientoActivo() {
             btnCheck.classList.add('checked');
             btnCheck.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETADA';
 
-            // Activar automáticamente el cronómetro de descanso flotante
-            iniciarCronometro();
-
             // Comprobar si todas las series del entrenamiento están completadas
             const todasLasSeries = contenedor.querySelectorAll('.serie-card');
             const completadas = contenedor.querySelectorAll('.serie-card.completada');
@@ -2444,7 +2522,7 @@ function inicializarEventosEntrenamientoActivo() {
             if (todasLasSeries.length === completadas.length) {
                 mostrarToast('TODAS LAS SERIES COMPLETADAS');
             } else {
-                mostrarToast('SERIE REGISTRADA · DESCANSO INICIADO');
+                mostrarToast('SERIE REGISTRADA');
             }
         } else {
             // Desmarcar si el usuario pulsó por error
@@ -2469,6 +2547,33 @@ function inicializarEventosEntrenamientoActivo() {
     const btnFinalizar = document.getElementById('btn-finalizar-entrenamiento');
     if (btnFinalizar) {
         btnFinalizar.addEventListener('click', finalizarEntrenamiento);
+    }
+
+    // 5. Botón para abrir / cerrar cronómetro desde la cabecera
+    const btnToggleCrono = document.getElementById('btn-toggle-crono');
+    if (btnToggleCrono) {
+        btnToggleCrono.addEventListener('click', () => {
+            const elFlotante = document.getElementById('cronometro-flotante');
+            if (!elFlotante) return;
+
+            const estaOculto = elFlotante.classList.contains('oculto');
+            if (estaOculto) {
+                if (APP.cronometro.segundosRestantes === 0) {
+                    APP.cronometro.segundosRestantes = APP.cronometro.segundosTotales;
+                }
+                if (!APP.cronometro.activo) {
+                    const btnPausar = document.getElementById('btn-cronometro-pausar');
+                    if (btnPausar) {
+                        btnPausar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+                        btnPausar.setAttribute('aria-label', 'Iniciar cronómetro');
+                    }
+                }
+                actualizarVistaCronometro();
+                elFlotante.classList.remove('oculto');
+            } else {
+                elFlotante.classList.add('oculto');
+            }
+        });
     }
 }
 
@@ -2528,13 +2633,15 @@ function finalizarEntrenamiento() {
     });
 
     if (totalSeriesCompletadas === 0) {
-        mostrarConfirmacion('No has marcado ninguna serie como completada. ¿Guardar la sesión de todos modos?', () => {
+        mostrarConfirmacion('No has marcado ninguna serie como completada. ¿Finalizar y guardar de todos modos?', () => {
             guardarSesionEnHistorial(ejerciciosResultado, 0, 0);
-        }, 'Guardar');
+        }, 'Finalizar', 'btn-primary');
         return;
     }
 
-    guardarSesionEnHistorial(ejerciciosResultado, totalSeriesCompletadas, volumenTotalKg);
+    mostrarConfirmacion('¿Deseas finalizar el entrenamiento y guardar la sesión?', () => {
+        guardarSesionEnHistorial(ejerciciosResultado, totalSeriesCompletadas, volumenTotalKg);
+    }, 'Finalizar', 'btn-primary');
 }
 
 /**
@@ -2675,12 +2782,23 @@ function inicializarModalDetalleSesion() {
 
     const modal = document.getElementById('modal-detalle-sesion');
     const btnCerrar = document.getElementById('btn-cerrar-modal-detalle');
+    const btnEditarModal = document.getElementById('btn-editar-sesion-modal');
     const btnEliminar = document.getElementById('btn-eliminar-sesion');
 
     if (btnCerrar) {
         btnCerrar.addEventListener('click', () => {
             if (modal) modal.classList.remove('activo');
             APP.sesionSeleccionadaId = null;
+        });
+    }
+
+    if (btnEditarModal) {
+        btnEditarModal.addEventListener('click', () => {
+            if (!APP.sesionSeleccionadaId) return;
+            const sesionId = APP.sesionSeleccionadaId;
+            if (modal) modal.classList.remove('activo');
+            APP.sesionSeleccionadaId = null;
+            abrirEditorSesion(sesionId);
         });
     }
 
@@ -2693,6 +2811,9 @@ function inicializarModalDetalleSesion() {
                 historial = historial.filter(s => s.id !== APP.sesionSeleccionadaId);
                 guardarHistorial(historial);
 
+                // Recalcular 1RM tras eliminar la sesión
+                recalcularTodosLos1RM();
+
                 if (modal) modal.classList.remove('activo');
                 APP.sesionSeleccionadaId = null;
 
@@ -2704,13 +2825,421 @@ function inicializarModalDetalleSesion() {
 }
 
 // ------------------------------------------------------------
-// F. INICIALIZACIÓN FINAL DEL BLOQUE 3 (UNIFICADA)
+// G. MÓDULO DE EDICIÓN DE SESIÓN DEL HISTORIAL
+// ------------------------------------------------------------
+
+/**
+ * Asigna automáticamente los tipos de serie de un ejercicio según su formato
+ * (TOP SET / PLANAS) y si cada serie está marcada como calentamiento (Warm-up).
+ * @param {Object} ej - Objeto de ejercicio con array de series y formato
+ */
+function actualizarTiposSeriesEjercicio(ej) {
+    if (!ej || !ej.series) return;
+    const formato = ej.formato || 'planas';
+    let primeraEfectivaEncontrada = false;
+
+    ej.series.forEach(serie => {
+        if (serie.esWarmup) {
+            serie.tipo = 'warmup';
+        } else {
+            if (formato === 'topset') {
+                if (!primeraEfectivaEncontrada) {
+                    serie.tipo = 'topset';
+                    primeraEfectivaEncontrada = true;
+                } else {
+                    serie.tipo = 'backoff';
+                }
+            } else {
+                serie.tipo = 'plana';
+            }
+        }
+    });
+}
+
+/**
+ * Abre el modal de edición cargando todos los ejercicios y series de la sesión.
+ * @param {string} sesionId - ID de la sesión a editar
+ */
+function abrirEditorSesion(sesionId) {
+    const historial = obtenerHistorial();
+    const sesion = historial.find(s => s.id === sesionId);
+
+    if (!sesion) {
+        mostrarToast('Error: no se encontró la sesión');
+        return;
+    }
+
+    // Copia profunda para editar sin alterar hasta pulsar Guardar
+    APP.sesionEnEdicion = JSON.parse(JSON.stringify(sesion));
+
+    // Inicializar formato y estado de calentamiento de cada ejercicio
+    (APP.sesionEnEdicion.ejercicios || []).forEach(ej => {
+        const tieneTopSetOBackoff = (ej.series || []).some(s => s.tipo === 'topset' || s.tipo === 'backoff');
+        ej.formato = tieneTopSetOBackoff ? 'topset' : 'planas';
+
+        (ej.series || []).forEach(serie => {
+            serie.esWarmup = (serie.tipo === 'warmup');
+        });
+
+        actualizarTiposSeriesEjercicio(ej);
+    });
+
+    const modal = document.getElementById('modal-editar-sesion');
+    const titulo = document.getElementById('titulo-editar-sesion');
+    const subtitulo = document.getElementById('subtitulo-editar-sesion');
+
+    if (titulo) {
+        titulo.textContent = APP.sesionEnEdicion.rutinaNombre || 'EDITAR SESIÓN';
+    }
+
+    if (subtitulo) {
+        const f = formatearFecha(APP.sesionEnEdicion.fecha);
+        subtitulo.textContent = `${f.completa.toUpperCase()} · ${APP.sesionEnEdicion.duracionMinutos || 0} MIN`;
+    }
+
+    renderizarCuerpoEditorSesion();
+
+    if (modal) {
+        modal.classList.add('activo');
+    }
+}
+
+/**
+ * Renderiza los bloques de ejercicios y series editables dentro del modal.
+ */
+function renderizarCuerpoEditorSesion() {
+    const contenedor = document.getElementById('contenido-editar-sesion');
+    if (!contenedor || !APP.sesionEnEdicion) return;
+
+    const scrollActual = contenedor.scrollTop;
+
+    if (!APP.sesionEnEdicion.ejercicios || APP.sesionEnEdicion.ejercicios.length === 0) {
+        contenedor.innerHTML = `
+            <div class="empty-state-mini">
+                <p>No hay ejercicios en esta sesión.</p>
+            </div>
+        `;
+        return;
+    }
+
+    contenedor.innerHTML = APP.sesionEnEdicion.ejercicios.map((ej, ejIdx) => {
+        const cat = ej.categoria || '';
+        const badgeCat = cat.includes('squat') ? 'sq' : (cat.includes('bench') ? 'bp' : (cat.includes('deadlift') ? 'dl' : 'tot'));
+        const badgeTexto = cat ? cat.replace('accesorio_', '').toUpperCase() : 'EJ';
+        const formatoActual = ej.formato || 'planas';
+
+        const seriesHtml = (ej.series || []).map((serie, serieIdx) => {
+            const esTopSet = serie.tipo === 'topset';
+            const esWarmup = serie.tipo === 'warmup';
+            const esPlana = serie.tipo === 'plana';
+            const claseCard = esTopSet ? 'serie-topset' : (esWarmup ? 'serie-warmup' : (esPlana ? 'serie-plana' : 'serie-backoff'));
+            const etiquetaBadge = esTopSet ? 'TOP SET' : (esWarmup ? 'WARM-UP' : (esPlana ? 'PLANA' : 'BACK-OFF'));
+
+            const pesoVal = serie.peso !== undefined ? serie.peso : 20;
+            const repsVal = serie.reps !== undefined ? serie.reps : 5;
+            const rpeVal = serie.rpe !== undefined ? serie.rpe : 8;
+            const completada = serie.completada !== false;
+
+            return `
+                <div class="serie-card serie-card-edicion ${claseCard}" data-ej-idx="${ejIdx}" data-serie-idx="${serieIdx}">
+                    <div class="serie-header-edicion">
+                        <div class="serie-info-tipo">
+                            <span class="serie-numero">Serie ${serieIdx + 1}</span>
+                            <span class="serie-tipo">${etiquetaBadge}</span>
+                        </div>
+                        <div class="serie-acciones-header">
+                            <label class="switch-calentamiento" title="Marcar como serie de calentamiento">
+                                <input type="checkbox" class="check-warmup-serie" data-ej-idx="${ejIdx}" data-serie-idx="${serieIdx}" ${serie.esWarmup ? 'checked' : ''}>
+                                <span class="switch-slider"></span>
+                                <span class="switch-texto">WARM-UP</span>
+                            </label>
+                            <button type="button" class="btn-eliminar-serie-edicion" data-ej-idx="${ejIdx}" data-serie-idx="${serieIdx}" aria-label="Eliminar serie" title="Eliminar serie">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="serie-inputs">
+                        <div class="campo-grupo">
+                            <label>Peso (kg)</label>
+                            <div class="stepper">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-2.5">−</button>
+                                <input type="number" class="input-peso-edicion" value="${pesoVal}" step="2.5" min="0" inputmode="decimal">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="2.5">+</button>
+                            </div>
+                        </div>
+                        <div class="campo-grupo">
+                            <label>Reps</label>
+                            <div class="stepper">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-1">−</button>
+                                <input type="number" class="input-reps-edicion" value="${repsVal}" step="1" min="1" max="50" inputmode="numeric">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="1">+</button>
+                            </div>
+                        </div>
+                        <div class="campo-grupo">
+                            <label>RPE</label>
+                            <div class="stepper stepper-rpe">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-0.5">−</button>
+                                <input type="number" class="input-rpe-edicion" value="${rpeVal}" step="0.5" min="5" max="10" inputmode="decimal">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="0.5">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-check btn-check-edicion ${completada ? 'checked' : ''}" data-ej-idx="${ejIdx}" data-serie-idx="${serieIdx}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span>${completada ? 'SERIE REALIZADA' : 'NO REALIZADA'}</span>
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="bloque-ejercicio-edicion" data-ej-idx="${ejIdx}">
+                <div class="ejercicio-header-edicion">
+                    <h3 class="ejercicio-nombre-edicion">${ejIdx + 1}. ${ej.nombre}</h3>
+                    <span class="badge-cat ${badgeCat}">${badgeTexto}</span>
+                </div>
+                <div class="ejercicio-controles-edicion">
+                    <div class="switch-formato-ejercicio" data-ej-idx="${ejIdx}">
+                        <button type="button" class="btn-formato ${formatoActual === 'topset' ? 'activo' : ''}" data-ej-idx="${ejIdx}" data-formato="topset">TOP SET</button>
+                        <button type="button" class="btn-formato ${formatoActual === 'planas' ? 'activo' : ''}" data-ej-idx="${ejIdx}" data-formato="planas">PLANAS</button>
+                    </div>
+                    <button type="button" class="btn-nueva-serie-edicion" data-ej-idx="${ejIdx}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>AÑADIR SERIE</span>
+                    </button>
+                </div>
+                <div class="series-lista">
+                    ${seriesHtml || '<div class="empty-state-mini"><p>Sin series en este ejercicio</p></div>'}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    contenedor.scrollTop = scrollActual;
+}
+
+/**
+ * Lee los datos actuales de los inputs del DOM y los sincroniza en APP.sesionEnEdicion.
+ */
+function sincronizarDatosEditorSesionDesdeDOM() {
+    const contenedor = document.getElementById('contenido-editar-sesion');
+    if (!contenedor || !APP.sesionEnEdicion) return;
+
+    const bloques = contenedor.querySelectorAll('.bloque-ejercicio-edicion');
+    bloques.forEach(bloque => {
+        const ejIdx = parseInt(bloque.dataset.ejIdx, 10);
+        if (isNaN(ejIdx) || !APP.sesionEnEdicion.ejercicios[ejIdx]) return;
+
+        const ej = APP.sesionEnEdicion.ejercicios[ejIdx];
+        const seriesCards = bloque.querySelectorAll('.serie-card-edicion');
+        const seriesData = [];
+
+        seriesCards.forEach(card => {
+            const inputPeso = card.querySelector('.input-peso-edicion');
+            const inputReps = card.querySelector('.input-reps-edicion');
+            const inputRpe = card.querySelector('.input-rpe-edicion');
+            const checkWarmup = card.querySelector('.check-warmup-serie');
+            const btnCheck = card.querySelector('.btn-check-edicion');
+
+            const peso = parseFloat(inputPeso?.value) || 0;
+            const reps = parseInt(inputReps?.value, 10) || 0;
+            const rpe = parseFloat(inputRpe?.value) || 8;
+            const esWarmup = checkWarmup ? checkWarmup.checked : false;
+            const completada = btnCheck ? btnCheck.classList.contains('checked') : true;
+
+            seriesData.push({
+                esWarmup: esWarmup,
+                tipo: esWarmup ? 'warmup' : 'plana',
+                peso: peso,
+                reps: reps,
+                rpe: rpe,
+                completada: completada
+            });
+        });
+
+        ej.series = seriesData;
+        actualizarTiposSeriesEjercicio(ej);
+    });
+}
+
+/**
+ * Guarda los cambios efectuados en la sesión en localStorage y recalcula todo el 1RM.
+ */
+function guardarEdicionSesion() {
+    if (!APP.sesionEnEdicion || !APP.sesionEnEdicion.id) return;
+
+    sincronizarDatosEditorSesionDesdeDOM();
+
+    let totalSeries = 0;
+    let volumenKg = 0;
+
+    (APP.sesionEnEdicion.ejercicios || []).forEach(ej => {
+        (ej.series || []).forEach(s => {
+            if (s.completada) {
+                totalSeries++;
+                volumenKg += ((parseFloat(s.peso) || 0) * (parseInt(s.reps, 10) || 0));
+            }
+        });
+    });
+
+    APP.sesionEnEdicion.totalSeriesCompletadas = totalSeries;
+    APP.sesionEnEdicion.volumenTotalKg = Math.round(volumenKg * 10) / 10;
+
+    let historial = obtenerHistorial();
+    const idx = historial.findIndex(s => s.id === APP.sesionEnEdicion.id);
+
+    if (idx !== -1) {
+        historial[idx] = APP.sesionEnEdicion;
+        guardarHistorial(historial);
+    } else {
+        mostrarToast('Error al actualizar la sesión');
+        return;
+    }
+
+    // ¡CRÍTICO! Recalcular todos los 1RM y PRs desde cero
+    recalcularTodosLos1RM();
+
+    // Cerrar modales
+    const modalEditar = document.getElementById('modal-editar-sesion');
+    if (modalEditar) modalEditar.classList.remove('activo');
+
+    const modalDetalle = document.getElementById('modal-detalle-sesion');
+    if (modalDetalle) modalDetalle.classList.remove('activo');
+
+    APP.sesionEnEdicion = null;
+    APP.sesionSeleccionadaId = null;
+
+    // Refrescar vistas inmediatamente
+    renderizarHistorial();
+    renderizar1RM();
+    actualizarTabla1RM();
+
+    mostrarToast('SESIÓN ACTUALIZADA Y 1RM RECÁLCULADO');
+}
+
+/**
+ * Cierra el modal de edición de sesión descartando cambios temporales.
+ */
+function cerrarEditorSesion() {
+    const modal = document.getElementById('modal-editar-sesion');
+    if (modal) modal.classList.remove('activo');
+    APP.sesionEnEdicion = null;
+}
+
+/**
+ * Inicializa los event listeners del modal de edición de sesión.
+ */
+let _editorSesionInicializado = false;
+function inicializarModalEditarSesion() {
+    if (_editorSesionInicializado) return;
+    _editorSesionInicializado = true;
+
+    const modal = document.getElementById('modal-editar-sesion');
+    const btnCerrar = document.getElementById('btn-cerrar-modal-editar-sesion');
+    const btnCancelar = document.getElementById('btn-cancelar-editar-sesion');
+    const btnGuardar = document.getElementById('btn-guardar-editar-sesion');
+    const contenedor = document.getElementById('contenido-editar-sesion');
+
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrarEditorSesion);
+    if (btnCancelar) btnCancelar.addEventListener('click', cerrarEditorSesion);
+    if (btnGuardar) btnGuardar.addEventListener('click', guardarEdicionSesion);
+
+    if (contenedor) {
+        // Delegación de eventos para clicks: formato, añadir serie, eliminar serie y check
+        contenedor.addEventListener('click', (e) => {
+            // 1. Alternar formato de ejercicio: TOP SET vs PLANAS
+            const btnFormato = e.target.closest('.switch-formato-ejercicio .btn-formato');
+            if (btnFormato) {
+                const ejIdx = parseInt(btnFormato.dataset.ejIdx, 10);
+                const nuevoFormato = btnFormato.dataset.formato;
+                if (!isNaN(ejIdx) && APP.sesionEnEdicion && APP.sesionEnEdicion.ejercicios[ejIdx]) {
+                    sincronizarDatosEditorSesionDesdeDOM();
+                    const ej = APP.sesionEnEdicion.ejercicios[ejIdx];
+                    if (ej.formato !== nuevoFormato) {
+                        ej.formato = nuevoFormato;
+                        actualizarTiposSeriesEjercicio(ej);
+                        renderizarCuerpoEditorSesion();
+                    }
+                }
+                return;
+            }
+
+            // 2. Añadir nueva serie al ejercicio
+            const btnNuevaSerie = e.target.closest('.btn-nueva-serie-edicion');
+            if (btnNuevaSerie) {
+                sincronizarDatosEditorSesionDesdeDOM();
+                const ejIdx = parseInt(btnNuevaSerie.dataset.ejIdx, 10);
+                if (!isNaN(ejIdx) && APP.sesionEnEdicion && APP.sesionEnEdicion.ejercicios[ejIdx]) {
+                    const ej = APP.sesionEnEdicion.ejercicios[ejIdx];
+                    const series = ej.series;
+                    const ultima = series[series.length - 1];
+                    series.push({
+                        esWarmup: false,
+                        tipo: 'plana',
+                        peso: ultima ? ultima.peso : 20,
+                        reps: ultima ? ultima.reps : 5,
+                        rpe: ultima ? ultima.rpe : 8,
+                        completada: true
+                    });
+                    actualizarTiposSeriesEjercicio(ej);
+                    renderizarCuerpoEditorSesion();
+                }
+                return;
+            }
+
+            // 3. Eliminar serie
+            const btnEliminar = e.target.closest('.btn-eliminar-serie-edicion');
+            if (btnEliminar) {
+                sincronizarDatosEditorSesionDesdeDOM();
+                const ejIdx = parseInt(btnEliminar.dataset.ejIdx, 10);
+                const serieIdx = parseInt(btnEliminar.dataset.serieIdx, 10);
+                if (!isNaN(ejIdx) && !isNaN(serieIdx) && APP.sesionEnEdicion && APP.sesionEnEdicion.ejercicios[ejIdx]) {
+                    const ej = APP.sesionEnEdicion.ejercicios[ejIdx];
+                    ej.series.splice(serieIdx, 1);
+                    actualizarTiposSeriesEjercicio(ej);
+                    renderizarCuerpoEditorSesion();
+                }
+                return;
+            }
+
+            // 4. Toggle de serie realizada
+            const btnCheck = e.target.closest('.btn-check-edicion');
+            if (btnCheck) {
+                btnCheck.classList.toggle('checked');
+                const span = btnCheck.querySelector('span');
+                if (span) {
+                    span.textContent = btnCheck.classList.contains('checked') ? 'SERIE REALIZADA' : 'NO REALIZADA';
+                }
+                return;
+            }
+        });
+
+        // Evento change para el switch de calentamiento (Warm-up)
+        contenedor.addEventListener('change', (e) => {
+            if (e.target.classList.contains('check-warmup-serie')) {
+                sincronizarDatosEditorSesionDesdeDOM();
+                const ejIdx = parseInt(e.target.dataset.ejIdx, 10);
+                if (!isNaN(ejIdx) && APP.sesionEnEdicion && APP.sesionEnEdicion.ejercicios[ejIdx]) {
+                    actualizarTiposSeriesEjercicio(APP.sesionEnEdicion.ejercicios[ejIdx]);
+                    renderizarCuerpoEditorSesion();
+                }
+            }
+        });
+    }
+}
+
+// ------------------------------------------------------------
+// H. INICIALIZACIÓN FINAL DEL BLOQUE 3 (UNIFICADA)
 // ------------------------------------------------------------
 
 function inicializarParte3() {
     inicializarCronometro();
     inicializarEventosEntrenamientoActivo();
     inicializarModalDetalleSesion();
+    inicializarModalEditarSesion();
 }
 
 
@@ -2732,6 +3261,9 @@ function inicializarCierreModalesBackdrop() {
                 }
                 if (modal.id === 'modal-detalle-sesion') {
                     APP.sesionSeleccionadaId = null;
+                }
+                if (modal.id === 'modal-editar-sesion') {
+                    APP.sesionEnEdicion = null;
                 }
             }
         });
@@ -2836,6 +3368,9 @@ async function initApp() {
     }
     if (typeof inicializarModalDetalleSesion === 'function') {
         inicializarModalDetalleSesion();
+    }
+    if (typeof inicializarModalEditarSesion === 'function') {
+        inicializarModalEditarSesion();
     }
 
     // 6. Delegaciones permanentes de eventos dinámicos
