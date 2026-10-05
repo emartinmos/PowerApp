@@ -1,0 +1,74 @@
+PROPRIETARY SOFTWARE LICENSE / LICENCIA DE SOFTWARE PROPIETARIO
+
+Copyright (c) 2026 Eder Martin Mosquera. Todos los derechos reservados / All Rights Reserved.
+
+================================================================================
+ESPAÑOL (Versión Oficial)
+================================================================================
+
+AVISO DE SOFTWARE PROPIETARIO Y CONFIDENCIAL:
+Este software, su código fuente, arquitectura, diseño visual, estructura de datos
+y documentación asociada (en adelante, el "Software") son propiedad exclusiva y
+titularidad de Eder Martin Mosquera. Este Software NO es de código abierto (NOT
+Open Source).
+
+1. TÉRMINOS Y CONDICIONES DE USO:
+Se prohíbe terminantemente a cualquier persona física o jurídica:
+(a) Copiar, clonar, bifurcar (fork) con fines de redistribución, modificar,
+    adaptar, traducir o crear obras derivadas basadas en este Software o en
+    cualquiera de sus partes.
+(b) Distribuir, publicar, sublicenciar, arrendar, alquilar, vender, ceder o
+    transferir de cualquier modo el código fuente, diseño gráfico, hojas de
+    estilo o esquemas de datos a terceros.
+(c) Realizar ingeniería inversa, descompilar, desensamblar o intentar extraer
+    el código fuente o algoritmos subyacentes del Software.
+(d) Explotar comercialmente el Software de manera directa o indirecta sin el
+    consentimiento previo, expreso y por escrito del titular del copyright.
+
+2. USO PERSONAL AUTORIZADO:
+Se concede exclusivamente al usuario final un derecho no exclusivo, revocable,
+intransferible y limitado para acceder a la aplicación y utilizarla para fines
+estrictamente personales a través de la URL de despliegue oficial provista por el
+autor.
+
+3. EXENCIÓN DE RESPONSABILIDAD (AS IS):
+ESTE SOFTWARE SE SUMINISTRA "TAL CUAL" ("AS IS"), SIN GARANTÍAS DE NINGÚN TIPO,
+EXPRESAS O IMPLÍCITAS, INCLUYENDO, PERO SIN LIMITARSE A, GARANTÍAS DE COMERCIABILIDAD,
+ADECUACIÓN PARA UN PROPÓSITO PARTICULAR O NO INFRACCIÓN. EN NINGÚN CASO EL TITULAR
+DEL COPYRIGHT SERÁ RESPONSABLE POR DAÑOS DIRECTOS, INDIRECTOS, INCIDENTALES,
+ESPECIALES O CONSECUENTES DERIVADOS DEL USO O DE LA INCAPACIDAD DE USO DE ESTE SOFTWARE.
+
+================================================================================
+ENGLISH (Official English Version)
+================================================================================
+
+PROPRIETARY AND CONFIDENTIAL SOFTWARE NOTICE:
+This software, its source code, architecture, visual design, data structure,
+and associated documentation (hereinafter, the "Software") are the exclusive
+property of Eder Martin Mosquera. This Software is NOT Open Source.
+
+1. TERMS AND RESTRICTIONS:
+Any individual or legal entity is strictly prohibited from:
+(a) Copying, cloning, forking for redistribution, modifying, adapting,
+    translating, or creating derivative works based on this Software or any part
+    thereof.
+(b) Distributing, publishing, sublicensing, leasing, renting, selling,
+    assigning, or otherwise transferring the source code, visual designs,
+    stylesheets, or data schemas to third parties.
+(c) Reverse engineering, decompiling, disassembling, or attempting to extract
+    the source code or underlying algorithms of the Software.
+(d) Commercially exploiting the Software directly or indirectly without the
+    prior, express, and written consent of the copyright holder.
+
+2. PERMITTED PERSONAL USE:
+The end user is granted solely a non-exclusive, revocable, non-transferable, and
+limited right to access and use the compiled/deployed application strictly for
+personal purposes through the official deployment URL provided by the author.
+
+3. DISCLAIMER OF WARRANTY (AS IS):
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
