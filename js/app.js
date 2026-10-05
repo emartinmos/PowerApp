@@ -741,8 +741,11 @@ function calcularYActualizar1RM(sesion) {
     const fechaSesion = sesion.fecha || new Date().toISOString();
 
     sesion.ejercicios.forEach(ej => {
-        const cat = ej.categoria;
-        const tipo = obtenerTipo1RM(cat);
+        let tipo = obtenerTipo1RM(ej.categoria);
+        if (!tipo && ej.ejercicioId) {
+            const info = buscarEjercicioPorId(ej.ejercicioId);
+            if (info) tipo = obtenerTipo1RM(info.categoria);
+        }
         if (!tipo) return; // Solo procesa básico squat, bench o deadlift
 
         (ej.series || []).forEach(serie => {
@@ -3383,7 +3386,82 @@ async function initApp() {
     renderizarRutinasConstructor();
     renderizarHistorial();
 
+    // 8. Inicializar instalador PWA
+    inicializarInstalacionPWA();
+
     console.log('[OK] [QA Engine] Todos los botones y eventos quedaron conectados correctamente.');
+}
+
+// ============================================================
+// 17. MÓDULO PROGRESSIVE WEB APP (PWA & OFFLINE)
+// ============================================================
+
+let eventoInstalacionPWA = null;
+
+// Capturar el evento beforeinstallprompt de Chrome/Android de inmediato (sin race condition)
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    eventoInstalacionPWA = e;
+    const btnInstalar = document.getElementById('btn-instalar-app');
+    if (btnInstalar) {
+        btnInstalar.style.display = 'inline-flex';
+    }
+    console.log('[PWA] Evento beforeinstallprompt capturado.');
+});
+
+/**
+ * Conecta los listeners del botón de instalación y appinstalled.
+ */
+function inicializarInstalacionPWA() {
+    const btnInstalar = document.getElementById('btn-instalar-app');
+    if (!btnInstalar) return;
+
+    // Si el evento ya llegó antes de completar initApp, mostrar el botón
+    if (eventoInstalacionPWA) {
+        btnInstalar.style.display = 'inline-flex';
+    }
+
+    // Click en el botón INSTALAR APP
+    btnInstalar.addEventListener('click', async () => {
+        if (!eventoInstalacionPWA) return;
+
+        eventoInstalacionPWA.prompt();
+
+        try {
+            const { outcome } = await eventoInstalacionPWA.userChoice;
+            console.log(`[PWA] Respuesta del usuario a la instalación: ${outcome}`);
+
+            if (outcome === 'accepted') {
+                btnInstalar.style.display = 'none';
+                eventoInstalacionPWA = null;
+            }
+        } catch (err) {
+            console.warn('[PWA] Error al procesar prompt de instalación:', err);
+        }
+    });
+
+    // Evento appinstalled cuando se finaliza la instalación
+    window.addEventListener('appinstalled', () => {
+        eventoInstalacionPWA = null;
+        btnInstalar.style.display = 'none';
+        console.log('[PWA] Aplicación instalada exitosamente.');
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('APLICACIÓN INSTALADA');
+        }
+    });
+}
+
+// 4. Registro del Service Worker con rutas relativas
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+                console.log('[PWA] Service Worker registrado con éxito. Scope:', registration.scope);
+            })
+            .catch((error) => {
+                console.warn('[PWA] Error al registrar el Service Worker:', error);
+            });
+    });
 }
 
 // Disparo seguro e inmediato de la inicialización unificada
@@ -3392,3 +3470,4 @@ if (document.readyState === 'loading') {
 } else {
     initApp();
 }
+
