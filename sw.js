@@ -1,4 +1,4 @@
-const CACHE_NAME = 'powerlifting-pwa-v2';
+const CACHE_NAME = 'powerlifting-pwa';
 
 const ASSETS = [
     './',
@@ -10,48 +10,43 @@ const ASSETS = [
     './icons/icon.svg'
 ];
 
-// 1. INSTALACIÓN: Precargar recursos esenciales y tomar control inmediato
+// 1. INSTALACIÓN: Precargar recursos y activar inmediatamente sin esperar
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => {
-                return cache.addAll(ASSETS);
-            })
-            .then(() => {
-                return self.skipWaiting();
-            })
+            .then((cache) => cache.addAll(ASSETS))
+            .then(() => self.skipWaiting())
     );
 });
 
-// 2. ACTIVACIÓN: Purgar versiones antiguas de la caché y tomar control de clientes
+// 2. ACTIVACIÓN: Purgar cachés antiguas y tomar control inmediato de clientes abiertos
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys()
-            .then((cacheNames) => {
-                return Promise.all(
-                    cacheNames.map((name) => {
-                        if (name !== CACHE_NAME) {
-                            return caches.delete(name);
-                        }
-                    })
-                );
-            })
-            .then(() => {
-                return self.clients.claim();
-            })
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((name) => {
+                    if (name !== CACHE_NAME) {
+                        return caches.delete(name);
+                    }
+                })
+            );
+        }).then(() => self.clients.claim())
     );
 });
 
-// 3. FETCH: Estrategia Network-First con fallback a Caché (100% Offline)
-// Permite actualizar código al instante cuando hay red y funcionar sin conexión en sótanos/gimnasios
+// 3. FETCH: Estrategia Network-First, falling back to Cache
+// - Intenta siempre obtener la última versión desde la red (GitHub Pages)
+// - Si hay respuesta válida, actualiza la caché dinámicamente y la devuelve
+// - Si está offline (sin cobertura en el gimnasio), devuelve el recurso de la caché
 self.addEventListener('fetch', (event) => {
+    // Solo interceptar peticiones GET
     if (event.request.method !== 'GET') return;
 
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
-                // Si la respuesta de red es válida y de nuestro origen, refrescar caché
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                // Si la respuesta de red es válida (200), actualizar la caché dinámicamente
+                if (networkResponse && networkResponse.status === 200) {
                     const responseClone = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, responseClone);
@@ -60,12 +55,12 @@ self.addEventListener('fetch', (event) => {
                 return networkResponse;
             })
             .catch(() => {
-                // Sin conexión a red: responder desde caché
+                // Sin conexión (offline en el gimnasio): responder desde la caché
                 return caches.match(event.request).then((cachedResponse) => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
-                    // Si es navegación a la SPA, responder con index.html precacheado
+                    // Fallback de navegación para la SPA
                     if (event.request.mode === 'navigate') {
                         return caches.match('./index.html');
                     }

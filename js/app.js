@@ -3451,12 +3451,22 @@ function inicializarInstalacionPWA() {
     });
 }
 
-// 4. Registro del Service Worker con rutas relativas
+// 4. Registro del Service Worker con rutas relativas y actualización automática
 if ('serviceWorker' in navigator) {
+    // Si se activa un nuevo Service Worker en segundo plano, recargar limpiamente sin reinstalar
+    let recargando = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (recargando) return;
+        recargando = true;
+        window.location.reload();
+    });
+
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
             .then((registration) => {
                 console.log('[PWA] Service Worker registrado con éxito. Scope:', registration.scope);
+                // Comprobar automáticamente si hay una nueva versión en GitHub Pages
+                registration.update();
             })
             .catch((error) => {
                 console.warn('[PWA] Error al registrar el Service Worker:', error);
