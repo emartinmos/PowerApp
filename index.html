@@ -44,14 +44,25 @@
                 <h1 class="app-titulo">SESIÓN DE ENTRENAMIENTO</h1>
                 <p class="app-subtitulo">SELECCIONAR PROTOCOLO ACTIVO</p>
             </div>
-            <button id="btn-instalar-app" class="btn-instalar-app" aria-label="Instalar aplicación">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                <span>INSTALAR APP</span>
-            </button>
+            <div class="header-acciones">
+                <button class="btn-crono-header" id="btn-abrir-calc-discos-home" aria-label="Calculadora de discos" title="Calcular discos de barra">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <line x1="6" y1="7" x2="6" y2="17"/>
+                        <line x1="9" y1="5" x2="9" y2="19"/>
+                        <line x1="15" y1="5" x2="15" y2="19"/>
+                        <line x1="18" y1="7" x2="18" y2="17"/>
+                    </svg>
+                </button>
+                <button id="btn-instalar-app" class="btn-instalar-app" aria-label="Instalar aplicación">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>INSTALAR APP</span>
+                </button>
+            </div>
         </header>
         <main class="vista-contenido">
             <div id="lista-rutinas-entrenar" class="lista-tarjetas">
@@ -77,6 +88,15 @@
                 <p class="app-subtitulo" id="fecha-entrenamiento"></p>
             </div>
             <div class="header-acciones">
+                <button class="btn-crono-header" id="btn-abrir-calc-discos-activo" aria-label="Calculadora de discos" title="Calcular discos de barra">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <line x1="6" y1="7" x2="6" y2="17"/>
+                        <line x1="9" y1="5" x2="9" y2="19"/>
+                        <line x1="15" y1="5" x2="15" y2="19"/>
+                        <line x1="18" y1="7" x2="18" y2="17"/>
+                    </svg>
+                </button>
                 <button class="btn-crono-header" id="btn-toggle-crono" aria-label="Abrir o cerrar cronómetro de descanso" title="Cronómetro">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="13" r="8"/>
@@ -222,6 +242,7 @@
                             <p class="seccion-desc">Récords automáticos calculados a partir de tus sesiones completadas.</p>
                         </div>
                         <div class="seccion-1rm-acciones">
+                            <button class="btn btn-secondary btn-mini-action" id="btn-abrir-calc-discos-1rm">DISCOS</button>
                             <button class="btn btn-danger btn-mini-action" id="btn-reset-1rm">RESETEAR A 0</button>
                         </div>
                     </div>
@@ -229,6 +250,47 @@
                     <!-- Cuadrícula de Tarjetas Técnicas 1RM: SQ, BP, DL, TOTAL -->
                     <div id="grid-tarjetas-1rm" class="grid-tarjetas-1rm">
                         <!-- Generado dinámicamente por renderizar1RM() -->
+                    </div>
+                </div>
+
+                <!-- Coeficientes Oficiales de Competición (IPF GL / DOTS) -->
+                <div class="seccion-1rm seccion-coeficientes">
+                    <div class="seccion-1rm-header">
+                        <div>
+                            <h2 class="seccion-titulo">COEFICIENTES DE COMPETICIÓN</h2>
+                            <p class="seccion-desc">Puntuación relativa calculada automáticamente sobre tu Total (SQ + BP + DL) y peso corporal.</p>
+                        </div>
+                    </div>
+                    <div class="panel-coeficientes">
+                        <div class="coeficientes-inputs">
+                            <div class="campo-grupo">
+                                <label for="input-atleta-peso" class="form-label">PESO CORPORAL (KG)</label>
+                                <div class="stepper">
+                                    <button type="button" class="stepper-btn stepper-menos" data-step="-0.5" data-target="input-atleta-peso">−</button>
+                                    <input type="number" id="input-atleta-peso" class="input-config" placeholder="Ej: 83.0" step="0.5" min="30" max="260" inputmode="decimal">
+                                    <button type="button" class="stepper-btn stepper-mas" data-step="0.5" data-target="input-atleta-peso">+</button>
+                                </div>
+                            </div>
+                            <div class="campo-grupo">
+                                <label class="form-label">CATEGORÍA / SEXO</label>
+                                <div class="switch-sexo-atleta" id="switch-sexo-atleta">
+                                    <button type="button" class="btn-sexo activo" data-sexo="M">MASCULINO (M)</button>
+                                    <button type="button" class="btn-sexo" data-sexo="F">FEMENINO (F)</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid-tarjetas-coeficientes">
+                            <div class="tarjeta-coeficiente">
+                                <span class="coeficiente-etiqueta">IPF GL POINTS</span>
+                                <span class="coeficiente-valor" id="valor-puntos-ipfgl">--</span>
+                                <span class="coeficiente-subtitulo">IPF Classic 3-Lift</span>
+                            </div>
+                            <div class="tarjeta-coeficiente">
+                                <span class="coeficiente-etiqueta">PUNTOS DOTS</span>
+                                <span class="coeficiente-valor" id="valor-puntos-dots">--</span>
+                                <span class="coeficiente-subtitulo">DOTS Formula</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -465,6 +527,85 @@
             <div class="modal-footer modal-footer-doble">
                 <button type="button" class="btn btn-secondary" id="btn-cancelar-editar-sesion">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="btn-guardar-editar-sesion">GUARDAR CAMBIOS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: CALCULADORA DE CARGA DE BARRA ===== -->
+    <div id="modal-calculadora-discos" class="modal">
+        <div class="modal-contenido modal-calculadora">
+            <div class="modal-header">
+                <div>
+                    <h2>CARGA DE BARRA</h2>
+                    <p style="font-size: 0.72rem; color: var(--gris-medio); margin-top: 3px; font-family: var(--font-mono); text-transform: uppercase;">DESGLOSE POR LADO - DISCOS DE COMPETICIÓN</p>
+                </div>
+                <button class="btn-cerrar-modal" id="btn-cerrar-modal-calc-discos" aria-label="Cerrar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Selector de Peso Objetivo -->
+                <div class="campo-grupo">
+                    <label for="calc-peso-objetivo">PESO OBJETIVO (KG)</label>
+                    <div class="calc-input-peso-contenedor">
+                        <button type="button" class="btn-stepper-calc" id="btn-calc-peso-menos" aria-label="Restar 2.5 kg">-2.5</button>
+                        <input type="number" id="calc-peso-objetivo" class="input-calc-peso" value="100" min="0" step="0.5" inputmode="decimal">
+                        <button type="button" class="btn-stepper-calc" id="btn-calc-peso-mas" aria-label="Sumar 2.5 kg">+2.5</button>
+                    </div>
+                </div>
+
+                <!-- Configuración de Barra y Collarines -->
+                <div class="calc-config-grid">
+                    <div class="campo-grupo">
+                        <label for="calc-select-barra">TIPO DE BARRA</label>
+                        <select id="calc-select-barra" class="input-moderno">
+                            <option value="20" selected>Barra Estándar (20 kg)</option>
+                            <option value="25">Barra Squat (25 kg)</option>
+                            <option value="15">Barra Mujer (15 kg)</option>
+                        </select>
+                    </div>
+                    <div class="campo-grupo">
+                        <label for="calc-select-collarines">COLLARINES</label>
+                        <select id="calc-select-collarines" class="input-moderno">
+                            <option value="5" selected>Competición (+5 kg total)</option>
+                            <option value="0">Sin collarines (0 kg)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Resumen Numérico -->
+                <div class="calc-resumen-metricas">
+                    <div class="calc-metrica-card">
+                        <span class="calc-metrica-etiqueta">POR LADO</span>
+                        <span class="calc-metrica-valor" id="calc-valor-por-lado">37.5 <small>kg</small></span>
+                    </div>
+                    <div class="calc-metrica-card">
+                        <span class="calc-metrica-etiqueta">BASE (BARRA + COL.)</span>
+                        <span class="calc-metrica-valor" id="calc-valor-base">25.0 <small>kg</small></span>
+                    </div>
+                    <div class="calc-metrica-card">
+                        <span class="calc-metrica-etiqueta">TOTAL CALCULADO</span>
+                        <span class="calc-metrica-valor" id="calc-valor-total">100.0 <small>kg</small></span>
+                    </div>
+                </div>
+
+                <!-- Visualización Gráfica de la Barra (Sleeve) -->
+                <div class="calc-visualizador-contenedor">
+                    <div class="calc-manguito-barra" id="calc-manguito-barra">
+                        <!-- Generado por JS: tope interior, discos y collarín -->
+                    </div>
+                </div>
+
+                <!-- Desglose de Discos (Badges) -->
+                <div class="calc-desglose-seccion">
+                    <span class="calc-seccion-titulo">DISCOS POR LADO (UN LATERAL):</span>
+                    <div class="calc-desglose-chips" id="calc-desglose-chips">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-bloque" id="btn-cerrar-calc-discos">CERRAR</button>
             </div>
         </div>
     </div>

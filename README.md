@@ -10,6 +10,7 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
 - Configuración de estructuras específicas de Powerlifting: esquemas combinados `Top Set + Back-off` y `Series Planas`.
 - Segmentación por series de aproximación (`Warm-up`), series efectivas pesadas (`Top Set`) y volumen de descarga (`Back-off`).
 - Definición de objetivos de repeticiones y esfuerzo percibido mediante escala RPE (Rating of Perceived Exertion) con granularidad de 0.5 puntos.
+- **Clonación y Duplicación Rápida:** Botón de duplicación directa en un solo toque que clona toda la estructura de series y ejercicios con nomenclatura inteligente de progresión (incremento automático de `Semana X` a `Semana X+1`, `Microciclo X`, o sufijo incremental de copia).
 
 ### Catálogo de Ejercicios Extenso y Modular
 - Base de datos local en JSON con más de 250 variantes técnicas de movimientos de competición de IPF (Sentadilla, Press de Banca y Peso Muerto) y accesorios específicos de hipertrofia muscular.
@@ -21,13 +22,25 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
 - Cálculo dinámico e instantáneo del porcentaje sobre el 1RM (`% 1RM`) por cada bloque de ejercicio.
 - Cronómetro de descanso manual flotante con temporizadores preconfigurados (3:00, 5:00, 8:00 min) y alertas hápticas/visuales de fin de pausa.
 
-### Gestión Automatizada de 1RM y e1RM
+### Calculadora Visual de Carga de Barra (Competición IPF)
+- Acceso directo instantáneo desde la cabecera superior y desde la sección de marcas 1RM.
+- Algoritmo de desglose voraz por lateral de barra utilizando la gama cromática y especificaciones oficiales de la International Powerlifting Federation (IPF):
+  - 25 kg Carmesí (`#E50914`), 20 kg Azul (`#1D4ED8`), 15 kg Amarillo (`#EAB308`), 10 kg Verde (`#15803D`), 5 kg Blanco (`#F5F5F5`), 2.5 kg Negro Carbón (`#262626`), 1.25 kg Plata (`#737373`), 0.5 kg y 0.25 kg microdiscos.
+- Selección configurable de tipo de barra (`20 kg` estándar, `25 kg` squat bar, `15 kg` barra corta) y collarines de competición (`+5 kg` total / `2.5 kg` por lado) o levantamiento sin collarines.
+- Renderizado gráfico dimensional del manguito (*sleeve*), tope interior y collarín de bloqueo de seguridad con chips de desglose numérico.
+
+### Gestión de 1RM y Coeficientes Oficiales (IPF GL & DOTS)
 - Actualización automática de récords personales al finalizar cualquier entrenamiento:
   - **PR Real:** Carga máxima absoluta superada a 1 o más repeticiones.
   - **e1RM Estimado:** Repetición máxima teórica calculada mediante la fórmula de Epley ajustada por RIR (Reps in Reserve / RPE):
     $$\text{e1RM} = \text{Peso} \times \left(1 + \frac{\text{Reps} + (10 - \text{RPE})}{30}\right)$$
 - Recálculo dinámico de marcas históricas tras la edición o eliminación retrospectiva de sesiones.
 - Calculadora técnica de porcentajes de carga (del 50% al 100% del 1RM).
+- **Calculadora Automática de Coeficientes de Competición:**
+  - Panel integrado en la vista de 1RM con configuración persistida de Peso Corporal (kg) y Sexo biológico (M / F).
+  - Cálculo instantáneo de **IPF GL Points** según la fórmula oficial de 3 movimientos Raw:
+    $$\text{IPF GL} = \frac{\text{Total}}{A - B \cdot e^{-C \cdot \text{BW}}} \times 100$$
+  - Cálculo instantáneo de **Puntos DOTS** mediante polinomio de 4º grado para comparación normalizada entre categorías de peso.
 
 ### Operación 100% Offline y Persistencia Local
 - Almacenamiento local persistente sin necesidad de backend o bases de datos remotas mediante `localStorage`.

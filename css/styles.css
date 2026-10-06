@@ -2006,3 +2006,450 @@ h1, h2, h3 {
     background-color: rgba(239, 68, 68, 0.18);
     border-color: var(--peligro);
 }
+
+/* ===== 18. CALCULADORA VISUAL DE CARGA DE BARRA (COMPETICIÓN) ===== */
+.modal-calculadora {
+    max-height: 90dvh !important;
+}
+
+.calc-input-peso-contenedor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.btn-stepper-calc {
+    background-color: var(--superficie);
+    border: 1px solid var(--borde-fuerte);
+    color: var(--blanco);
+    border-radius: var(--radio-xs);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 800;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 120ms ease;
+    min-height: 46px;
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.btn-stepper-calc:active {
+    background-color: var(--superficie-elevada);
+    border-color: var(--rojo);
+    color: var(--rojo);
+}
+
+.input-calc-peso {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 1.6rem !important;
+    font-weight: 900;
+    color: var(--blanco);
+    background-color: var(--carbon);
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio-xs);
+    min-height: 46px;
+}
+
+.calc-config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.calc-resumen-metricas {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.calc-metrica-card {
+    background-color: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xs);
+    padding: 8px 6px;
+    text-align: center;
+}
+
+.calc-metrica-etiqueta {
+    display: block;
+    font-size: 0.58rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--gris-medio);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.calc-metrica-valor {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    color: var(--blanco);
+    margin-top: 4px;
+}
+
+.calc-metrica-valor small {
+    font-size: 0.65rem;
+    color: var(--gris-medio);
+    font-weight: 700;
+}
+
+/* Visualizador Gráfico de la Manga / Sleeve */
+.calc-visualizador-contenedor {
+    background-color: #070707;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio-sm);
+    padding: 24px 14px;
+    margin: 16px 0;
+    overflow-x: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.calc-manguito-barra {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    padding: 0 10px;
+    min-height: 124px;
+}
+
+.calc-eje-manguito {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 16px;
+    background: linear-gradient(180deg, #505050 0%, #202020 50%, #454545 100%);
+    border: 1px solid #141414;
+    border-radius: 2px;
+    z-index: 1;
+}
+
+.calc-tope-interior {
+    width: 14px;
+    height: 114px;
+    background: linear-gradient(180deg, #383838 0%, #1c1c1c 100%);
+    border: 1px solid #505050;
+    border-radius: 2px;
+    margin-right: 4px;
+    z-index: 3;
+    flex-shrink: 0;
+}
+
+.calc-discos-lista {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    z-index: 3;
+    flex-shrink: 0;
+}
+
+.calc-disco-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 900;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), 2px 0 4px rgba(0,0,0,0.6);
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    letter-spacing: -0.05em;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+
+/* Colores y Tamaños Oficiales de Competición IPF */
+.calc-disco-visual.d25 {
+    width: 18px;
+    height: 120px;
+    background-color: #E50914;
+    color: #FFFFFF;
+    font-size: 10px;
+}
+
+.calc-disco-visual.d20 {
+    width: 17px;
+    height: 120px;
+    background-color: #1D4ED8;
+    color: #FFFFFF;
+    font-size: 10px;
+}
+
+.calc-disco-visual.d15 {
+    width: 16px;
+    height: 104px;
+    background-color: #EAB308;
+    color: #000000;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.calc-disco-visual.d10 {
+    width: 15px;
+    height: 90px;
+    background-color: #15803D;
+    color: #FFFFFF;
+    font-size: 9px;
+}
+
+.calc-disco-visual.d5 {
+    width: 14px;
+    height: 74px;
+    background-color: #F5F5F5;
+    color: #000000;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.calc-disco-visual.d2_5 {
+    width: 13px;
+    height: 58px;
+    background-color: #212121;
+    color: #FFFFFF;
+    border: 1px solid #555555;
+    font-size: 8px;
+}
+
+.calc-disco-visual.d1_25 {
+    width: 12px;
+    height: 48px;
+    background-color: #737373;
+    color: #FFFFFF;
+    font-size: 8px;
+}
+
+.calc-disco-visual.d0_5 {
+    width: 10px;
+    height: 38px;
+    background-color: #525252;
+    color: #FFFFFF;
+    font-size: 7px;
+}
+
+.calc-disco-visual.d0_25 {
+    width: 9px;
+    height: 32px;
+    background-color: #383838;
+    color: #CCCCCC;
+    font-size: 7px;
+}
+
+/* Collarín de Competición (+2.5 kg c/u) */
+.calc-collarin-visual {
+    width: 14px;
+    height: 58px;
+    background: linear-gradient(180deg, #353535 0%, #1e1e1e 100%);
+    border: 1px solid #666666;
+    border-radius: 2px;
+    margin-left: 3px;
+    z-index: 3;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.6);
+}
+
+.calc-collarin-visual::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 6px;
+    background-color: #E50914;
+    border-radius: 1px;
+}
+
+.calc-vacio-aviso {
+    z-index: 3;
+    font-size: 0.75rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--gris-medio);
+    letter-spacing: 0.06em;
+    padding: 0 12px;
+}
+
+/* Desglose de Badges / Chips */
+.calc-desglose-seccion {
+    margin-top: 14px;
+}
+
+.calc-seccion-titulo {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--gris-medio);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.calc-desglose-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.calc-chip-disco {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--carbon);
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio-xs);
+    padding: 5px 9px;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    font-weight: 800;
+    color: var(--blanco);
+}
+
+.calc-chip-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.3);
+}
+
+/* ===== 19. COEFICIENTES OFICIALES DE COMPETICIÓN (IPF GL & DOTS) ===== */
+.seccion-coeficientes {
+    margin-top: 24px;
+}
+
+.panel-coeficientes {
+    background-color: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-sm);
+    padding: var(--espacio-base);
+}
+
+.coeficientes-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--borde);
+}
+
+@media (max-width: 480px) {
+    .coeficientes-inputs {
+        grid-template-columns: 1fr;
+    }
+}
+
+.switch-sexo-atleta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background-color: var(--negro);
+    padding: 3px;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xs);
+}
+
+.btn-sexo {
+    background: transparent;
+    color: var(--gris-medio);
+    border: 1px solid transparent;
+    border-radius: var(--radio-xs);
+    padding: 8px 6px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: all 120ms ease;
+    text-align: center;
+}
+
+.btn-sexo:hover {
+    color: var(--blanco);
+}
+
+.btn-sexo.activo {
+    background-color: var(--superficie-elevada);
+    color: var(--blanco);
+    border-color: var(--rojo);
+}
+
+.grid-tarjetas-coeficientes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.tarjeta-coeficiente {
+    background-color: var(--carbon);
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio-xs);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.coeficiente-etiqueta {
+    font-size: 0.68rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--gris-medio);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.coeficiente-valor {
+    font-size: 1.55rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    color: var(--rojo);
+    margin: 6px 0 2px 0;
+    line-height: 1.1;
+}
+
+.coeficiente-subtitulo {
+    font-size: 0.62rem;
+    font-family: var(--font-mono);
+    color: var(--gris-oscuro);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ===== 20. BOTÓN CLONAR / DUPLICAR RUTINA ===== */
+.tarjeta-acciones .btn-duplicar-rutina {
+    background-color: var(--carbon);
+    border-color: var(--borde-fuerte);
+    color: var(--blanco);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tarjeta-acciones .btn-duplicar-rutina:active {
+    background-color: var(--superficie-elevada);
+    border-color: var(--gris-claro);
+    color: var(--rojo);
+}
+
