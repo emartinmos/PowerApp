@@ -7,6 +7,163 @@
 'use strict';
 
 // ============================================================
+// 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
+// ============================================================
+
+const APP_VERSION = '1.2.0';
+const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
+
+const NOTAS_DE_PARCHE = [
+    {
+        version: 'v1.2.0',
+        fecha: '06/10/2026',
+        titulo: 'Edición de Historial, Competición IPF y Modo Offline Blindado',
+        cambios: [
+            'Soporte completo para editar y corregir sesiones pasadas en el Historial con recálculo automático de marcas 1RM y e1RM.',
+            'Expansión de la base de datos técnica a más de 250 variantes de sentadilla, banca, peso muerto y accesorios de hipertrofia.',
+            'Calculadora visual de carga de barra por lado con especificaciones oficiales IPF (discos de 25 kg a 0.25 kg y collarines calibrados).',
+            'Cálculo automático de coeficientes de competición IPF GL Points (Classic 3-Lift) y Puntos DOTS según peso corporal y sexo.',
+            'Clonación rápida de plantillas de entrenamiento con avance automático de semanas y microciclos.',
+            'Cronómetro de descanso manual flotante accesible desde la cabecera con temporizadores preconfigurados.',
+            'Instalador PWA nativo y Service Worker con estrategia Network-First para entrenamiento 100% offline sin cobertura.'
+        ]
+    },
+    {
+        version: 'v1.1.0',
+        fecha: '04/10/2026',
+        titulo: 'Sistema Dinámico 1RM y Rediseño Industrial Dark',
+        cambios: [
+            'Automatización de marcas personales (PR Real) y 1RM estimado (e1RM mediante fórmula de Epley ajustada por RIR/RPE) comenzando desde 0 kg.',
+            'Rediseño visual completo hacia estética técnica "Industrial Dark" en negro puro (#000000) y acentos carmesí (#E50914).',
+            'Iconografía vectorial SVG técnica en todos los controles y eliminación de emojis.',
+            'Optimización responsive adaptada a zonas seguras (safe-area) y pantalla táctil de 393px (iPhone 16).'
+        ]
+    },
+    {
+        version: 'v1.0.0',
+        fecha: '01/10/2026',
+        titulo: 'Lanzamiento Inicial de PowerLifting Tracker',
+        cambios: [
+            'Constructor de protocolos con esquemas Top Set + Back-off y Series Planas.',
+            'Registro de sesiones en vivo con controles táctiles Stepper (+/-) para peso, repeticiones y RPE.',
+            'Cálculo de porcentaje de carga en tiempo real sobre 1RM.',
+            'Persistencia local íntegra mediante localStorage sin dependencias externas ni conexión requerida.'
+        ]
+    }
+];
+
+/**
+ * Renderiza el historial de versiones en el modal de Notas de Parche.
+ */
+function renderizarNotasParche() {
+    const contenedor = document.getElementById('contenido-changelog');
+    if (!contenedor) return;
+
+    contenedor.innerHTML = NOTAS_DE_PARCHE.map((n, idx) => {
+        const esActual = idx === 0 || n.version === `v${APP_VERSION}`;
+        return `
+            <article class="changelog-version-card ${esActual ? 'version-actual' : ''}">
+                <header class="changelog-version-header">
+                    <div class="changelog-badge-grupo">
+                        <span class="changelog-badge-version">${n.version}</span>
+                        ${esActual ? '<span class="changelog-badge-actual">ACTUAL</span>' : ''}
+                    </div>
+                    <time class="changelog-fecha">${n.fecha}</time>
+                </header>
+                <h3 class="changelog-version-titulo">${n.titulo}</h3>
+                <ul class="changelog-lista-cambios">
+                    ${n.cambios.map(c => `
+                        <li class="changelog-item-cambio">
+                            <span class="changelog-item-bullet" aria-hidden="true"></span>
+                            <span class="changelog-item-texto">${c}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </article>
+        `;
+    }).join('');
+}
+
+/**
+ * Comprueba si hay una nueva versión no leída por el usuario
+ * y muestra u oculta el punto rojo en el botón de la cabecera.
+ */
+function verificarNuevasVersionesChangelog() {
+    const punto = document.getElementById('punto-version-nueva');
+    if (!punto) return;
+
+    const versionLeida = localStorage.getItem(STORAGE_VERSION_LEIDA);
+    if (versionLeida !== APP_VERSION) {
+        punto.classList.remove('oculto');
+    } else {
+        punto.classList.add('oculto');
+    }
+}
+
+/**
+ * Abre el modal de notas de parche, renderiza los cambios y marca
+ * la versión actual como leída en localStorage.
+ */
+function abrirModalChangelog() {
+    const modal = document.getElementById('modal-changelog');
+    const punto = document.getElementById('punto-version-nueva');
+    if (!modal) return;
+
+    renderizarNotasParche();
+
+    // Guardar versión actual como leída y apagar indicador rojo
+    try {
+        localStorage.setItem(STORAGE_VERSION_LEIDA, APP_VERSION);
+    } catch (e) {
+        console.warn('No se pudo guardar la versión leída en localStorage:', e);
+    }
+
+    if (punto) {
+        punto.classList.add('oculto');
+    }
+
+    modal.classList.add('activo');
+}
+
+/**
+ * Cierra el modal de notas de parche.
+ */
+function cerrarModalChangelog() {
+    const modal = document.getElementById('modal-changelog');
+    if (modal) {
+        modal.classList.remove('activo');
+    }
+}
+
+/**
+ * Inicializa los eventos del botón y modal del Changelog.
+ */
+let _changelogInicializado = false;
+function inicializarChangelog() {
+    if (_changelogInicializado) return;
+    _changelogInicializado = true;
+
+    const btnAbrir = document.getElementById('btn-notas-parche');
+    const btnCerrarHeader = document.getElementById('btn-cerrar-modal-changelog');
+    const btnCerrarFooter = document.getElementById('btn-cerrar-changelog');
+
+    if (btnAbrir) {
+        btnAbrir.addEventListener('click', abrirModalChangelog);
+    }
+
+    if (btnCerrarHeader) {
+        btnCerrarHeader.addEventListener('click', cerrarModalChangelog);
+    }
+
+    if (btnCerrarFooter) {
+        btnCerrarFooter.addEventListener('click', cerrarModalChangelog);
+    }
+
+    // Verificar indicador rojo en el arranque
+    verificarNuevasVersionesChangelog();
+}
+
+// ============================================================
 // 1. ESTADO GLOBAL DE LA APLICACIÓN
 // ============================================================
 
@@ -918,6 +1075,7 @@ function renderizar1RM() {
     `;
 
     contenedor.innerHTML = html;
+    actualizarCoeficientesCompeticion(totalPR > 0 ? totalPR : totalE1RM);
 }
 
 /**
@@ -990,8 +1148,103 @@ function actualizarTabla1RM() {
     tablaPorcentajes.innerHTML = html;
 }
 
+// ============================================================
+// COEFICIENTES OFICIALES DE COMPETICIÓN (IPF GL & DOTS)
+// ============================================================
+
+const STORAGE_ATLETA_PESO = 'pl_atleta_peso';
+const STORAGE_ATLETA_SEXO = 'pl_atleta_sexo';
+
+function obtenerPesoAtleta() {
+    const val = localStorage.getItem(STORAGE_ATLETA_PESO);
+    return val ? parseFloat(val) : 83;
+}
+
+function guardarPesoAtleta(peso) {
+    localStorage.setItem(STORAGE_ATLETA_PESO, peso);
+}
+
+function obtenerSexoAtleta() {
+    return localStorage.getItem(STORAGE_ATLETA_SEXO) || 'M';
+}
+
+function guardarSexoAtleta(sexo) {
+    localStorage.setItem(STORAGE_ATLETA_SEXO, sexo);
+}
+
 /**
- * Inicializa los eventos de la sección 1RM (automático + reset a 0).
+ * Calcula IPF GL Points (Fórmula oficial IPF Classic 3-Lift).
+ * @param {number} total - Total de powerlifting en kg
+ * @param {number} bw - Peso corporal en kg
+ * @param {'M'|'F'} sexo - Sexo biológico del atleta
+ * @returns {number} Puntos IPF GL
+ */
+function calcularPuntosIPFGL(total, bw, sexo = 'M') {
+    if (!total || total <= 0 || !bw || bw <= 0) return 0;
+    const esMasculino = sexo === 'M';
+    const a = esMasculino ? 1199.72839 : 610.32796;
+    const b = esMasculino ? 1025.18162 : 1045.59282;
+    const c = esMasculino ? 0.00921 : 0.03048;
+
+    const denom = a - b * Math.exp(-c * bw);
+    if (denom <= 0) return 0;
+    return (total / denom) * 100;
+}
+
+/**
+ * Calcula puntos de la fórmula DOTS.
+ * @param {number} total - Total en kg
+ * @param {number} bw - Peso corporal en kg
+ * @param {'M'|'F'} sexo - Sexo biológico ('M' o 'F')
+ * @returns {number} Puntos DOTS
+ */
+function calcularPuntosDOTS(total, bw, sexo = 'M') {
+    if (!total || total <= 0 || !bw || bw <= 0) return 0;
+    const esMasculino = sexo === 'M';
+    const a = esMasculino ? -0.0000010930 : -0.0000010706;
+    const b = esMasculino ? 0.0007391293 : 0.0005158568;
+    const c = esMasculino ? -0.1918759221 : -0.1126655495;
+    const d = esMasculino ? 24.0900756 : 13.6175032;
+    const e = esMasculino ? -307.75076 : -57.96288;
+
+    const denom = a * Math.pow(bw, 4) + b * Math.pow(bw, 3) + c * Math.pow(bw, 2) + d * bw + e;
+    if (denom <= 0) return 0;
+    return total * (500 / denom);
+}
+
+/**
+ * Actualiza los paneles visuales de IPF GL y DOTS en la vista de 1RM.
+ */
+function actualizarCoeficientesCompeticion(totalPowerlifting = null) {
+    const elIpfGL = document.getElementById('valor-puntos-ipfgl');
+    const elDots = document.getElementById('valor-puntos-dots');
+    const inputPeso = document.getElementById('input-atleta-peso');
+    if (!elIpfGL || !elDots) return;
+
+    let total = totalPowerlifting;
+    if (total === null || total === undefined) {
+        const marcas = obtenerMarcas1RM();
+        const prTotal = (marcas.squat?.pr || 0) + (marcas.bench?.pr || 0) + (marcas.deadlift?.pr || 0);
+        const e1rmTotal = (marcas.squat?.e1rm || 0) + (marcas.bench?.e1rm || 0) + (marcas.deadlift?.e1rm || 0);
+        total = prTotal > 0 ? prTotal : e1rmTotal;
+    }
+
+    const pesoAtleta = inputPeso && parseFloat(inputPeso.value) > 0 ? parseFloat(inputPeso.value) : obtenerPesoAtleta();
+    const sexoAtleta = obtenerSexoAtleta();
+
+    if (total > 0 && pesoAtleta > 0) {
+        const ipfPoints = calcularPuntosIPFGL(total, pesoAtleta, sexoAtleta);
+        const dotsPoints = calcularPuntosDOTS(total, pesoAtleta, sexoAtleta);
+        elIpfGL.textContent = ipfPoints > 0 ? (Math.round(ipfPoints * 100) / 100).toFixed(2) : '--';
+        elDots.textContent = dotsPoints > 0 ? (Math.round(dotsPoints * 100) / 100).toFixed(2) : '--';
+    } else {
+        elIpfGL.textContent = '--';
+        elDots.textContent = '--';
+    }
+}
+
+/**
+ * Inicializa los eventos de la sección 1RM (automático + reset a 0 + coeficientes).
  */
 let _1rmInicializado = false;
 function inicializar1RM() {
@@ -1011,6 +1264,7 @@ function inicializar1RM() {
                 guardarMarcas1RM(marcasCero);
                 renderizar1RM();
                 actualizarTabla1RM();
+                actualizarCoeficientesCompeticion(0);
                 mostrarToast('MARCAS REINICIADAS A 0 KG');
             }, 'REINICIAR');
         });
@@ -1022,8 +1276,253 @@ function inicializar1RM() {
         selectCalc.addEventListener('change', actualizarTabla1RM);
     }
 
+    // Configuración de Atleta para Coeficientes (IPF GL & DOTS)
+    const inputPesoAtleta = document.getElementById('input-atleta-peso');
+    const switchSexo = document.getElementById('switch-sexo-atleta');
+
+    if (inputPesoAtleta) {
+        inputPesoAtleta.value = obtenerPesoAtleta();
+        inputPesoAtleta.addEventListener('input', () => {
+            const peso = parseFloat(inputPesoAtleta.value);
+            if (!isNaN(peso) && peso > 0) {
+                guardarPesoAtleta(peso);
+                actualizarCoeficientesCompeticion();
+            }
+        });
+    }
+
+    if (switchSexo) {
+        const sexoGuardado = obtenerSexoAtleta();
+        switchSexo.querySelectorAll('.btn-sexo').forEach(btn => {
+            if (btn.dataset.sexo === sexoGuardado) {
+                btn.classList.add('activo');
+            } else {
+                btn.classList.remove('activo');
+            }
+
+            btn.addEventListener('click', () => {
+                switchSexo.querySelectorAll('.btn-sexo').forEach(b => b.classList.remove('activo'));
+                btn.classList.add('activo');
+                guardarSexoAtleta(btn.dataset.sexo);
+                actualizarCoeficientesCompeticion();
+            });
+        });
+    }
+
     renderizar1RM();
     actualizarTabla1RM();
+}
+
+// ============================================================
+// CALCULADORA VISUAL DE CARGA DE BARRA (COMPETICIÓN IPF)
+// ============================================================
+
+const DISCOS_COMPETICION = [
+    { peso: 25, clase: 'd25', color: '#E50914', texto: '25' },
+    { peso: 20, clase: 'd20', color: '#1D4ED8', texto: '20' },
+    { peso: 15, clase: 'd15', color: '#EAB308', texto: '15' },
+    { peso: 10, clase: 'd10', color: '#15803D', texto: '10' },
+    { peso: 5, clase: 'd5', color: '#F5F5F5', texto: '5' },
+    { peso: 2.5, clase: 'd2_5', color: '#212121', texto: '2.5' },
+    { peso: 1.25, clase: 'd1_25', color: '#737373', texto: '1.25' },
+    { peso: 0.5, clase: 'd0_5', color: '#525252', texto: '0.5' },
+    { peso: 0.25, clase: 'd0_25', color: '#383838', texto: '0.25' }
+];
+
+/**
+ * Calcula el desglose voraz de discos para UN LADO de la barra.
+ * @param {number} pesoObjetivo
+ * @param {number} pesoBarra
+ * @param {number} pesoCollarines
+ * @returns {Object} { porLado, pesoBase, pesoTotalEfectivo, discosPorLado: Array }
+ */
+function calcularCargaDiscos(pesoObjetivo, pesoBarra = 20, pesoCollarines = 5) {
+    const pesoBase = pesoBarra + pesoCollarines;
+    const pesoExcedente = Math.max(0, pesoObjetivo - pesoBase);
+    let porLado = pesoExcedente / 2;
+    let resto = porLado;
+
+    const discosPorLado = [];
+    DISCOS_COMPETICION.forEach(d => {
+        const count = Math.floor(resto / d.peso);
+        if (count > 0) {
+            discosPorLado.push({
+                ...d,
+                cantidad: count
+            });
+            resto = Math.round((resto - count * d.peso) * 1000) / 1000;
+        }
+    });
+
+    const sumaDiscosPorLado = discosPorLado.reduce((acc, cur) => acc + (cur.peso * cur.cantidad), 0);
+    const pesoTotalEfectivo = pesoBase + (sumaDiscosPorLado * 2);
+
+    return {
+        pesoObjetivo,
+        pesoBase,
+        porLado: Math.round(sumaDiscosPorLado * 100) / 100,
+        pesoTotalEfectivo: Math.round(pesoTotalEfectivo * 100) / 100,
+        discosPorLado
+    };
+}
+
+/**
+ * Actualiza la interfaz del modal de carga de discos (sleeve, badges, métricas).
+ */
+function actualizarVistaCalculadoraDiscos() {
+    const inputPeso = document.getElementById('calc-peso-objetivo');
+    const selectBarra = document.getElementById('calc-select-barra');
+    const selectCollarines = document.getElementById('calc-select-collarines');
+    const manguitoEl = document.getElementById('calc-manguito-barra');
+    const chipsEl = document.getElementById('calc-desglose-chips');
+    const valPorLado = document.getElementById('calc-valor-por-lado');
+    const valBase = document.getElementById('calc-valor-base');
+    const valTotal = document.getElementById('calc-valor-total');
+
+    if (!inputPeso || !selectBarra || !selectCollarines || !manguitoEl || !chipsEl) return;
+
+    const pesoObjetivo = parseFloat(inputPeso.value) || 0;
+    const pesoBarra = parseFloat(selectBarra.value) || 20;
+    const pesoCollarines = parseFloat(selectCollarines.value) || 0;
+
+    const resultado = calcularCargaDiscos(pesoObjetivo, pesoBarra, pesoCollarines);
+
+    // Actualizar métricas numéricas
+    if (valPorLado) valPorLado.innerHTML = `${resultado.porLado} <small>kg</small>`;
+    if (valBase) valBase.innerHTML = `${resultado.pesoBase} <small>kg</small>`;
+    if (valTotal) valTotal.innerHTML = `${resultado.pesoTotalEfectivo} <small>kg</small>`;
+
+    // Dibujar el Manguito de la barra (Sleeve)
+    let sleeveHtml = `
+        <div class="calc-tope-interior" title="Tope interior de la barra"></div>
+        <div class="calc-eje-manguito"></div>
+    `;
+
+    if (resultado.discosPorLado.length === 0) {
+        sleeveHtml += `<span class="calc-vacio-aviso">BARRA VACÍA (SIN DISCOS)</span>`;
+    } else {
+        sleeveHtml += `<div class="calc-discos-lista">`;
+        resultado.discosPorLado.forEach(d => {
+            for (let i = 0; i < d.cantidad; i++) {
+                sleeveHtml += `<div class="calc-disco-visual ${d.clase}" title="Disco ${d.peso} kg">${d.texto}</div>`;
+            }
+        });
+        sleeveHtml += `</div>`;
+    }
+
+    if (pesoCollarines > 0) {
+        sleeveHtml += `<div class="calc-collarin-visual" title="Collarín competición (+2.5 kg por lado)"></div>`;
+    }
+
+    manguitoEl.innerHTML = sleeveHtml;
+
+    // Dibujar Desglose en Badges / Chips
+    if (resultado.discosPorLado.length === 0) {
+        chipsEl.innerHTML = `<span style="font-size: 0.72rem; color: var(--gris-medio); font-family: var(--font-mono);">0 DISCOS A CARGAR</span>`;
+    } else {
+        chipsEl.innerHTML = resultado.discosPorLado.map(d => `
+            <div class="calc-chip-disco">
+                <span class="calc-chip-color" style="background-color: ${d.color};"></span>
+                <span>${d.cantidad}x ${d.peso} kg</span>
+            </div>
+        `).join('');
+    }
+}
+
+/**
+ * Abre el modal de la calculadora de carga de barra pre-llenándolo opcionalmente.
+ * @param {number|null} pesoInicial
+ */
+function abrirModalCalculadoraDiscos(pesoInicial = null) {
+    const modal = document.getElementById('modal-calculadora-discos');
+    const inputPeso = document.getElementById('calc-peso-objetivo');
+    if (!modal) return;
+
+    if (pesoInicial !== null && !isNaN(pesoInicial) && pesoInicial > 0) {
+        if (inputPeso) inputPeso.value = pesoInicial;
+    }
+
+    actualizarVistaCalculadoraDiscos();
+    modal.classList.add('activo');
+}
+
+/**
+ * Cierra el modal de la calculadora de carga de barra.
+ */
+function cerrarModalCalculadoraDiscos() {
+    const modal = document.getElementById('modal-calculadora-discos');
+    if (modal) {
+        modal.classList.remove('activo');
+    }
+}
+
+let _calcDiscosInicializada = false;
+function inicializarCalculadoraDiscos() {
+    if (_calcDiscosInicializada) return;
+    _calcDiscosInicializada = true;
+
+    const inputPeso = document.getElementById('calc-peso-objetivo');
+    const selectBarra = document.getElementById('calc-select-barra');
+    const selectCollarines = document.getElementById('calc-select-collarines');
+    const btnMenos = document.getElementById('btn-calc-peso-menos');
+    const btnMas = document.getElementById('btn-calc-peso-mas');
+    const btnCerrarHeader = document.getElementById('btn-cerrar-modal-calc-discos');
+    const btnCerrarFooter = document.getElementById('btn-cerrar-calc-discos');
+
+    // Botones de apertura en diferentes vistas
+    const btnAbrirHome = document.getElementById('btn-abrir-calc-discos-home');
+    const btnAbrirActivo = document.getElementById('btn-abrir-calc-discos-activo');
+    const btnAbrir1RM = document.getElementById('btn-abrir-calc-discos-1rm');
+
+    if (btnAbrirHome) btnAbrirHome.addEventListener('click', () => abrirModalCalculadoraDiscos());
+    if (btnAbrirActivo) {
+        btnAbrirActivo.addEventListener('click', () => {
+            let pesoSugerido = null;
+            if (APP.sesionActiva && APP.sesionActiva.ejercicios && APP.sesionActiva.ejercicios.length > 0) {
+                const primerEj = APP.sesionActiva.ejercicios[0];
+                if (primerEj.series && primerEj.series.length > 0) {
+                    pesoSugerido = parseFloat(primerEj.series[0].peso) || null;
+                }
+            }
+            abrirModalCalculadoraDiscos(pesoSugerido);
+        });
+    }
+    if (btnAbrir1RM) btnAbrir1RM.addEventListener('click', () => abrirModalCalculadoraDiscos());
+
+    // Cierre
+    if (btnCerrarHeader) btnCerrarHeader.addEventListener('click', cerrarModalCalculadoraDiscos);
+    if (btnCerrarFooter) btnCerrarFooter.addEventListener('click', cerrarModalCalculadoraDiscos);
+
+    // Cambios dinámicos en los controles
+    if (inputPeso) {
+        inputPeso.addEventListener('input', actualizarVistaCalculadoraDiscos);
+    }
+    if (selectBarra) {
+        selectBarra.addEventListener('change', actualizarVistaCalculadoraDiscos);
+    }
+    if (selectCollarines) {
+        selectCollarines.addEventListener('change', actualizarVistaCalculadoraDiscos);
+    }
+
+    if (btnMenos) {
+        btnMenos.addEventListener('click', () => {
+            if (inputPeso) {
+                const actual = parseFloat(inputPeso.value) || 0;
+                inputPeso.value = Math.max(0, actual - 2.5);
+                actualizarVistaCalculadoraDiscos();
+            }
+        });
+    }
+
+    if (btnMas) {
+        btnMas.addEventListener('click', () => {
+            if (inputPeso) {
+                const actual = parseFloat(inputPeso.value) || 0;
+                inputPeso.value = actual + 2.5;
+                actualizarVistaCalculadoraDiscos();
+            }
+        });
+    }
 }
 
 
@@ -1125,6 +1624,76 @@ function renderizarRutinasEntrenar() {
     });
 }
 
+/**
+ * Genera el nombre para una plantilla clonada con progresión inteligente de semanas o numeración de copias.
+ * @param {string} nombreOriginal
+ * @returns {string}
+ */
+function generarNombreDuplicado(nombreOriginal) {
+    if (!nombreOriginal) return 'Plantilla (Copia)';
+
+    // Patrón 1: Detectar "Semana X" / "Week X" / "Microciclo X" / "Bloque X" / "S X" / "W X"
+    const regexSemana = /^(.*?\b(?:Semana|Week|Microciclo|Bloque|S|W)\s*)(\d+)(\b.*)$/i;
+    const matchSemana = nombreOriginal.match(regexSemana);
+    if (matchSemana) {
+        const prefijo = matchSemana[1];
+        const num = parseInt(matchSemana[2], 10) + 1;
+        const sufijo = matchSemana[3];
+        return `${prefijo}${num}${sufijo}`;
+    }
+
+    // Patrón 2: Detectar sufijo "(Copia X)"
+    const regexCopiaNum = /^(.*?)\s*\(Copia\s*(\d+)\)$/i;
+    const matchCopiaNum = nombreOriginal.match(regexCopiaNum);
+    if (matchCopiaNum) {
+        const base = matchCopiaNum[1];
+        const num = parseInt(matchCopiaNum[2], 10) + 1;
+        return `${base} (Copia ${num})`;
+    }
+
+    // Patrón 3: Detectar sufijo "(Copia)"
+    const regexCopiaSimple = /^(.*?)\s*\(Copia\)$/i;
+    const matchCopiaSimple = nombreOriginal.match(regexCopiaSimple);
+    if (matchCopiaSimple) {
+        return `${matchCopiaSimple[1]} (Copia 2)`;
+    }
+
+    // Por defecto: añadir " (Copia)"
+    return `${nombreOriginal} (Copia)`;
+}
+
+/**
+ * Clona profundamente una rutina y la persiste en localStorage.
+ * @param {string} rutinaId
+ */
+function duplicarRutina(rutinaId) {
+    const rutinas = obtenerRutinas();
+    const rutinaOriginal = rutinas.find(r => r.id === rutinaId);
+
+    if (!rutinaOriginal) {
+        mostrarToast('Error al localizar la plantilla');
+        return;
+    }
+
+    const nuevoNombre = generarNombreDuplicado(rutinaOriginal.nombre);
+    const ejerciciosClonados = JSON.parse(JSON.stringify(rutinaOriginal.ejercicios || []));
+
+    const nuevaRutina = {
+        id: generarId(),
+        nombre: nuevoNombre,
+        ejercicios: ejerciciosClonados,
+        fechaCreacion: new Date().toISOString()
+    };
+
+    rutinas.push(nuevaRutina);
+    guardarRutinas(rutinas);
+
+    renderizarRutinasConstructor();
+    renderizarRutinasEntrenar();
+
+    mostrarToast(`PLANTILLA CLONADA: ${nuevoNombre}`);
+}
+
 function renderizarRutinasConstructor() {
     // PARTE 2: Renderiza las tarjetas de rutinas en el Constructor
     const contenedor = document.getElementById('lista-rutinas-constructor');
@@ -1163,6 +1732,13 @@ function renderizarRutinasConstructor() {
                     <button class="btn btn-secondary btn-editar-rutina" data-rutina-id="${rutina.id}">
                         EDITAR
                     </button>
+                    <button class="btn btn-secondary btn-duplicar-rutina" data-rutina-id="${rutina.id}" title="Duplicar plantilla">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        CLONAR
+                    </button>
                     <button class="btn btn-danger btn-eliminar-rutina" data-rutina-id="${rutina.id}">
                         ELIMINAR
                     </button>
@@ -1177,6 +1753,15 @@ function renderizarRutinasConstructor() {
             e.stopPropagation();
             const rutinaId = btn.dataset.rutinaId;
             abrirEditorRutina(rutinaId); // Se define en PARTE 2
+        });
+    });
+
+    // Event listeners para duplicar
+    contenedor.querySelectorAll('.btn-duplicar-rutina').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rutinaId = btn.dataset.rutinaId;
+            duplicarRutina(rutinaId);
         });
     });
 
@@ -3300,11 +3885,18 @@ function inicializarDelegacionRutinasConstructor() {
 
     contenedor.addEventListener('click', (e) => {
         const btnEditar = e.target.closest('.btn-editar-rutina');
+        const btnDuplicar = e.target.closest('.btn-duplicar-rutina');
         const btnEliminar = e.target.closest('.btn-eliminar-rutina');
 
         if (btnEditar) {
             e.stopPropagation();
             abrirEditorRutina(btnEditar.dataset.rutinaId);
+            return;
+        }
+
+        if (btnDuplicar) {
+            e.stopPropagation();
+            duplicarRutina(btnDuplicar.dataset.rutinaId);
             return;
         }
 
@@ -3354,8 +3946,10 @@ async function initApp() {
     inicializarModalConfirmar();
     inicializarCierreModalesBackdrop();
 
-    // 3. Módulo 1RM y calculadora
+    // 3. Módulo 1RM, Coeficientes, Calculadora de Carga y Changelog
     inicializar1RM();
+    inicializarCalculadoraDiscos();
+    inicializarChangelog();
 
     // 4. Módulo Constructor de Rutinas (Parte 2)
     if (typeof inicializarConstructor === 'function') {
