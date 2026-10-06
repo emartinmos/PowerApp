@@ -42,6 +42,11 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
     $$\text{IPF GL} = \frac{\text{Total}}{A - B \cdot e^{-C \cdot \text{BW}}} \times 100$$
   - Cálculo instantáneo de **Puntos DOTS** mediante polinomio de 4º grado para comparación normalizada entre categorías de peso.
 
+### Control de Versiones y Notas de Parche (Changelog)
+- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.2`) con tipografía en números tabulares e icono vectorial.
+- Indicador luminoso en rojo carmesí de versión no leída, sincronizado automáticamente contra `localStorage` (`ultimaVersionLeida` vs `APP_VERSION`).
+- Modal técnico de lectura con desglose cronológico de versiones, fechas y cambios detallados (v1.2.0 actual, v1.1.0 y v1.0.0 inicial).
+
 ### Operación 100% Offline y Persistencia Local
 - Almacenamiento local persistente sin necesidad de backend o bases de datos remotas mediante `localStorage`.
 - Service Worker (`sw.js`) con estrategia `Network-First, falling back to Cache` para garantizar funcionamiento en recintos cerrados o sótanos sin conectividad móvil y sincronización automática de nuevas versiones.

@@ -2453,3 +2453,196 @@ h1, h2, h3 {
     color: var(--rojo);
 }
 
+/* ===== 21. NOTAS DE PARCHE (CHANGELOG) ===== */
+.btn-notas-parche {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #111111;
+    color: var(--gris-claro);
+    border: 1px solid #262626;
+    border-radius: var(--radio-sm);
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    flex-shrink: 0;
+    min-height: 38px;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-notas-parche:hover,
+.btn-notas-parche:active {
+    background-color: var(--carbon);
+    border-color: var(--borde-fuerte);
+    color: var(--blanco);
+}
+
+.btn-notas-parche svg {
+    stroke: var(--gris-medio);
+    flex-shrink: 0;
+    transition: stroke 120ms ease;
+}
+
+.btn-notas-parche:hover svg,
+.btn-notas-parche:active svg {
+    stroke: var(--blanco);
+}
+
+.num-version-badge {
+    color: var(--blanco);
+    font-weight: 900;
+}
+
+.punto-notificacion-version {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    background-color: #E50914;
+    border-radius: 50%;
+    box-shadow: 0 0 5px #E50914;
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 140ms ease;
+}
+
+.punto-notificacion-version.oculto {
+    display: none !important;
+}
+
+/* Modal Changelog */
+.modal-changelog-contenedor {
+    background-color: #0A0A0A !important;
+    border: 1px solid #262626 !important;
+    border-bottom: none !important;
+    max-height: 88dvh !important;
+}
+
+.changelog-body {
+    padding: 16px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.changelog-version-card {
+    background-color: #111111;
+    border: 1px solid #262626;
+    border-radius: var(--radio-sm);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 120ms ease;
+}
+
+.changelog-version-card.version-actual {
+    border-color: #383838;
+    border-left: 3px solid #E50914;
+    background: linear-gradient(90deg, rgba(229, 9, 20, 0.04) 0%, #111111 20%);
+}
+
+.changelog-version-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid #1F1F1F;
+    padding-bottom: 8px;
+}
+
+.changelog-badge-grupo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.changelog-badge-version {
+    font-size: 0.95rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    color: var(--blanco);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+}
+
+.changelog-badge-actual {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: var(--rojo-fondo);
+    border: 1px solid var(--rojo-borde);
+    color: var(--rojo);
+    border-radius: var(--radio-xs);
+    font-size: 0.62rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.changelog-fecha {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--gris-medio);
+}
+
+.changelog-version-titulo {
+    font-size: 0.88rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--blanco);
+    letter-spacing: 0.03em;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.changelog-lista-cambios {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.changelog-item-cambio {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--gris-claro);
+}
+
+.changelog-item-bullet {
+    width: 5px;
+    height: 5px;
+    background-color: #E50914;
+    border-radius: 1px;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.changelog-version-card:not(.version-actual) .changelog-item-bullet {
+    background-color: var(--gris-oscuro);
+}
+
+@media (max-width: 400px) {
+    .btn-notas-parche {
+        padding: 6px 8px;
+        font-size: 10.5px;
+        gap: 5px;
+    }
+    .header-acciones {
+        gap: 6px;
+    }
+}
+
+

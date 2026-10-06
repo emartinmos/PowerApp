@@ -7,6 +7,163 @@
 'use strict';
 
 // ============================================================
+// 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
+// ============================================================
+
+const APP_VERSION = '1.2.0';
+const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
+
+const NOTAS_DE_PARCHE = [
+    {
+        version: 'v1.2.0',
+        fecha: '06/10/2026',
+        titulo: 'Edición de Historial, Competición IPF y Modo Offline Blindado',
+        cambios: [
+            'Soporte completo para editar y corregir sesiones pasadas en el Historial con recálculo automático de marcas 1RM y e1RM.',
+            'Expansión de la base de datos técnica a más de 250 variantes de sentadilla, banca, peso muerto y accesorios de hipertrofia.',
+            'Calculadora visual de carga de barra por lado con especificaciones oficiales IPF (discos de 25 kg a 0.25 kg y collarines calibrados).',
+            'Cálculo automático de coeficientes de competición IPF GL Points (Classic 3-Lift) y Puntos DOTS según peso corporal y sexo.',
+            'Clonación rápida de plantillas de entrenamiento con avance automático de semanas y microciclos.',
+            'Cronómetro de descanso manual flotante accesible desde la cabecera con temporizadores preconfigurados.',
+            'Instalador PWA nativo y Service Worker con estrategia Network-First para entrenamiento 100% offline sin cobertura.'
+        ]
+    },
+    {
+        version: 'v1.1.0',
+        fecha: '04/10/2026',
+        titulo: 'Sistema Dinámico 1RM y Rediseño Industrial Dark',
+        cambios: [
+            'Automatización de marcas personales (PR Real) y 1RM estimado (e1RM mediante fórmula de Epley ajustada por RIR/RPE) comenzando desde 0 kg.',
+            'Rediseño visual completo hacia estética técnica "Industrial Dark" en negro puro (#000000) y acentos carmesí (#E50914).',
+            'Iconografía vectorial SVG técnica en todos los controles y eliminación de emojis.',
+            'Optimización responsive adaptada a zonas seguras (safe-area) y pantalla táctil de 393px (iPhone 16).'
+        ]
+    },
+    {
+        version: 'v1.0.0',
+        fecha: '01/10/2026',
+        titulo: 'Lanzamiento Inicial de PowerLifting Tracker',
+        cambios: [
+            'Constructor de protocolos con esquemas Top Set + Back-off y Series Planas.',
+            'Registro de sesiones en vivo con controles táctiles Stepper (+/-) para peso, repeticiones y RPE.',
+            'Cálculo de porcentaje de carga en tiempo real sobre 1RM.',
+            'Persistencia local íntegra mediante localStorage sin dependencias externas ni conexión requerida.'
+        ]
+    }
+];
+
+/**
+ * Renderiza el historial de versiones en el modal de Notas de Parche.
+ */
+function renderizarNotasParche() {
+    const contenedor = document.getElementById('contenido-changelog');
+    if (!contenedor) return;
+
+    contenedor.innerHTML = NOTAS_DE_PARCHE.map((n, idx) => {
+        const esActual = idx === 0 || n.version === `v${APP_VERSION}`;
+        return `
+            <article class="changelog-version-card ${esActual ? 'version-actual' : ''}">
+                <header class="changelog-version-header">
+                    <div class="changelog-badge-grupo">
+                        <span class="changelog-badge-version">${n.version}</span>
+                        ${esActual ? '<span class="changelog-badge-actual">ACTUAL</span>' : ''}
+                    </div>
+                    <time class="changelog-fecha">${n.fecha}</time>
+                </header>
+                <h3 class="changelog-version-titulo">${n.titulo}</h3>
+                <ul class="changelog-lista-cambios">
+                    ${n.cambios.map(c => `
+                        <li class="changelog-item-cambio">
+                            <span class="changelog-item-bullet" aria-hidden="true"></span>
+                            <span class="changelog-item-texto">${c}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+            </article>
+        `;
+    }).join('');
+}
+
+/**
+ * Comprueba si hay una nueva versión no leída por el usuario
+ * y muestra u oculta el punto rojo en el botón de la cabecera.
+ */
+function verificarNuevasVersionesChangelog() {
+    const punto = document.getElementById('punto-version-nueva');
+    if (!punto) return;
+
+    const versionLeida = localStorage.getItem(STORAGE_VERSION_LEIDA);
+    if (versionLeida !== APP_VERSION) {
+        punto.classList.remove('oculto');
+    } else {
+        punto.classList.add('oculto');
+    }
+}
+
+/**
+ * Abre el modal de notas de parche, renderiza los cambios y marca
+ * la versión actual como leída en localStorage.
+ */
+function abrirModalChangelog() {
+    const modal = document.getElementById('modal-changelog');
+    const punto = document.getElementById('punto-version-nueva');
+    if (!modal) return;
+
+    renderizarNotasParche();
+
+    // Guardar versión actual como leída y apagar indicador rojo
+    try {
+        localStorage.setItem(STORAGE_VERSION_LEIDA, APP_VERSION);
+    } catch (e) {
+        console.warn('No se pudo guardar la versión leída en localStorage:', e);
+    }
+
+    if (punto) {
+        punto.classList.add('oculto');
+    }
+
+    modal.classList.add('activo');
+}
+
+/**
+ * Cierra el modal de notas de parche.
+ */
+function cerrarModalChangelog() {
+    const modal = document.getElementById('modal-changelog');
+    if (modal) {
+        modal.classList.remove('activo');
+    }
+}
+
+/**
+ * Inicializa los eventos del botón y modal del Changelog.
+ */
+let _changelogInicializado = false;
+function inicializarChangelog() {
+    if (_changelogInicializado) return;
+    _changelogInicializado = true;
+
+    const btnAbrir = document.getElementById('btn-notas-parche');
+    const btnCerrarHeader = document.getElementById('btn-cerrar-modal-changelog');
+    const btnCerrarFooter = document.getElementById('btn-cerrar-changelog');
+
+    if (btnAbrir) {
+        btnAbrir.addEventListener('click', abrirModalChangelog);
+    }
+
+    if (btnCerrarHeader) {
+        btnCerrarHeader.addEventListener('click', cerrarModalChangelog);
+    }
+
+    if (btnCerrarFooter) {
+        btnCerrarFooter.addEventListener('click', cerrarModalChangelog);
+    }
+
+    // Verificar indicador rojo en el arranque
+    verificarNuevasVersionesChangelog();
+}
+
+// ============================================================
 // 1. ESTADO GLOBAL DE LA APLICACIÓN
 // ============================================================
 
@@ -3789,9 +3946,10 @@ async function initApp() {
     inicializarModalConfirmar();
     inicializarCierreModalesBackdrop();
 
-    // 3. Módulo 1RM, Coeficientes y Calculadora de Carga de Barra
+    // 3. Módulo 1RM, Coeficientes, Calculadora de Carga y Changelog
     inicializar1RM();
     inicializarCalculadoraDiscos();
+    inicializarChangelog();
 
     // 4. Módulo Constructor de Rutinas (Parte 2)
     if (typeof inicializarConstructor === 'function') {
