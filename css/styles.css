@@ -2645,4 +2645,182 @@ h1, h2, h3 {
     }
 }
 
+/* ===== 22. MICRO-NOTAS Y ETIQUETAS TÉCNICAS POR SERIE ===== */
+.btn-toggle-nota {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radio-xs);
+    font-size: 0.65rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--gris-medio);
+    background-color: var(--carbon);
+    border: 1px solid var(--borde);
+    cursor: pointer;
+    transition: all 120ms ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.btn-toggle-nota:hover,
+.btn-toggle-nota:active {
+    color: var(--blanco);
+    border-color: var(--borde-fuerte);
+}
+
+.btn-toggle-nota.activo,
+.btn-toggle-nota.tiene-datos {
+    background-color: var(--superficie-elevada);
+    border-color: var(--rojo);
+    color: var(--rojo);
+}
+
+.btn-toggle-nota svg {
+    flex-shrink: 0;
+}
+
+.serie-panel-nota {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    margin-top: 4px;
+    background-color: #0c0c0c;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xs);
+    box-sizing: border-box;
+}
+
+.serie-panel-nota.oculto {
+    display: none !important;
+}
+
+.chips-tags-tecnicos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.chip-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: var(--radio-xs);
+    background-color: var(--superficie);
+    border: 1px solid var(--borde);
+    color: var(--gris-medio);
+    cursor: pointer;
+    transition: all 120ms ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.chip-tag:active {
+    color: var(--blanco);
+    border-color: var(--borde-fuerte);
+}
+
+.chip-tag.activo {
+    background-color: var(--rojo-fondo);
+    border-color: var(--rojo);
+    color: var(--rojo);
+}
+
+.campo-micro-nota {
+    width: 100%;
+}
+
+.input-micro-nota {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 0.75rem !important;
+    border-radius: var(--radio-xs);
+    background-color: var(--carbon);
+    border: 1px solid var(--borde);
+    color: var(--blanco);
+    font-family: var(--font-sans);
+    box-sizing: border-box;
+}
+
+.input-micro-nota:focus {
+    border-color: var(--borde-fuerte);
+    outline: none;
+}
+
+.input-micro-nota::placeholder {
+    color: var(--gris-oscuro);
+    font-size: 0.72rem;
+}
+
+.serie-badges-resumen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.serie-badges-resumen.oculto {
+    display: none !important;
+}
+
+.badge-tag-resumen,
+.badge-micro-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background-color: var(--superficie-elevada);
+    border: 1px solid var(--borde-fuerte);
+    color: var(--blanco);
+    border-radius: 2px;
+}
+
+.badge-nota-resumen,
+.detalle-serie-nota {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    color: var(--gris-claro);
+    font-family: var(--font-mono);
+    font-style: italic;
+    background-color: #0c0c0c;
+    border: 1px solid var(--borde);
+    border-radius: 2px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.detalle-serie {
+    flex-wrap: wrap;
+}
+
+.detalle-serie-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    padding: 4px 0 2px 86px;
+}
+
+@media (max-width: 480px) {
+    .detalle-serie-meta {
+        padding-left: 0;
+    }
+}
+
+
 

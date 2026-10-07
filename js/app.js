@@ -10,10 +10,22 @@
 // 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
 // ============================================================
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 
 const NOTAS_DE_PARCHE = [
+    {
+        version: 'v1.3.0',
+        fecha: '06/10/2026',
+        titulo: 'Pantalla Encendida (Wake Lock), Alertas Acústicas y Micro-Notas Técnicas',
+        cambios: [
+            'Integración de Screen Wake Lock API para mantener la pantalla encendida durante el entrenamiento activo y reenganche automático al volver a la app.',
+            'Alertas acústicas sintetizadas en tiempo real con Web Audio API al llegar el descanso a 00:00 (secuencia deportiva de 3 beeps a 880 Hz y tono final a 1046.5 Hz).',
+            'Control de silencio y activación sonora con persistencia local en la barra flotante del cronómetro.',
+            'Registro de micro-notas y etiquetas técnicas rápidas por serie (Pausa limpia, Sticking point, Pérdida de línea, Grip al límite, Sin cinto, Muñequeras/Rodilleras).',
+            'Visualización de etiquetas e insignias técnicas en el historial de sesiones y soporte completo para editarlas en el editor retrospectivo.'
+        ]
+    },
     {
         version: 'v1.2.0',
         fecha: '06/10/2026',
@@ -214,8 +226,19 @@ const LS_KEYS = {
     RUTINAS: 'pl_rutinas',
     HISTORIAL: 'pl_historial',
     EJERCICIOS_CUSTOM: 'pl_ejercicios_custom',
-    MARCAS_1RM: 'pl_marcas_1rm'
+    MARCAS_1RM: 'pl_marcas_1rm',
+    CRONO_SONIDO: 'pl_crono_sonido'
 };
+
+// Etiquetas técnicas rápidas disponibles para micro-notas por serie
+const CHIPS_TECNICOS_DISPONIBLES = [
+    'Pausa limpia',
+    'Sticking point',
+    'Pérdida de línea',
+    'Grip al límite',
+    'Sin cinto',
+    'Muñequeras/Rodilleras'
+];
 
 // Valores iniciales limpios para las marcas 1RM (iniciadas estrictamente en 0 kg)
 const MARCAS_1RM_DEFECTO = {
@@ -1470,11 +1493,9 @@ function inicializarCalculadoraDiscos() {
     const btnCerrarFooter = document.getElementById('btn-cerrar-calc-discos');
 
     // Botones de apertura en diferentes vistas
-    const btnAbrirHome = document.getElementById('btn-abrir-calc-discos-home');
     const btnAbrirActivo = document.getElementById('btn-abrir-calc-discos-activo');
     const btnAbrir1RM = document.getElementById('btn-abrir-calc-discos-1rm');
 
-    if (btnAbrirHome) btnAbrirHome.addEventListener('click', () => abrirModalCalculadoraDiscos());
     if (btnAbrirActivo) {
         btnAbrirActivo.addEventListener('click', () => {
             let pesoSugerido = null;
@@ -2657,31 +2678,226 @@ function inicializarConstructor() {
 // A. CRONÓMETRO DE DESCANSO INTEGRADO (FLOTANTE)
 // ------------------------------------------------------------
 
+let audioCtxGlobal = null;
+
 /**
- * Emite un bip sonoro utilizando Web Audio API sin librerías externas.
+ * Obtiene o crea la instancia global de AudioContext, asegurando su reanudación.
+ * @returns {AudioContext|null}
  */
-function emitirBipFinDescanso() {
+function obtenerAudioContext() {
     try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const ganancia = ctx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime); // La5
-        osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.15); // Re6
-
-        ganancia.gain.setValueAtTime(0.25, ctx.currentTime);
-        ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-
-        osc.connect(ganancia);
-        ganancia.connect(ctx.destination);
-
-        osc.start();
-        osc.stop(ctx.currentTime + 0.6);
+        if (!audioCtxGlobal) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) {
+                audioCtxGlobal = new AudioCtx();
+            }
+        }
+        if (audioCtxGlobal && audioCtxGlobal.state === 'suspended') {
+            audioCtxGlobal.resume().catch(() => {});
+        }
+        return audioCtxGlobal;
     } catch (e) {
-        console.warn('Audio no permitido o no disponible:', e);
+        return null;
+    }
+}
+
+/**
+ * Desbloquea el AudioContext en la primera interacción del usuario.
+ */
+function desbloquearAudioContext() {
+    obtenerAudioContext();
+}
+
+/**
+ * Comprueba si el sonido del cronómetro está activo según localStorage.
+ * @returns {boolean}
+ */
+function cronometroSonidoHabilitado() {
+    return localStorage.getItem(LS_KEYS.CRONO_SONIDO) !== 'false';
+}
+
+/**
+ * Alterna el estado de silencio/sonido del cronómetro flotante.
+ */
+function alternarSonidoCronometro() {
+    desbloquearAudioContext();
+    const habilitado = cronometroSonidoHabilitado();
+    const nuevo = !habilitado;
+    try {
+        localStorage.setItem(LS_KEYS.CRONO_SONIDO, nuevo ? 'true' : 'false');
+    } catch (e) {}
+    actualizarBotonSonidoCronometro();
+    mostrarToast(nuevo ? 'SONIDO DE CRONÓMETRO ACTIVADO' : 'SONIDO DE CRONÓMETRO SILENCIADO');
+}
+
+/**
+ * Actualiza los iconos SVG y atributos del botón de sonido del cronómetro.
+ */
+function actualizarBotonSonidoCronometro() {
+    const btn = document.getElementById('btn-cronometro-sonido');
+    if (!btn) return;
+    const habilitado = cronometroSonidoHabilitado();
+    const iconOn = btn.querySelector('.icono-sonido-on');
+    const iconOff = btn.querySelector('.icono-sonido-off');
+    if (iconOn && iconOff) {
+        if (habilitado) {
+            iconOn.classList.remove('oculto');
+            iconOff.classList.add('oculto');
+            btn.setAttribute('aria-label', 'Silenciar sonido del cronómetro');
+            btn.title = 'Silenciar cronómetro';
+        } else {
+            iconOn.classList.add('oculto');
+            iconOff.classList.remove('oculto');
+            btn.setAttribute('aria-label', 'Activar sonido del cronómetro');
+            btn.title = 'Activar sonido cronómetro';
+        }
+    }
+}
+
+/**
+ * Emite una alerta acústica técnica de cronómetro deportivo mediante Web Audio API:
+ * 3 beeps cortos (880 Hz / La5, 80ms) + 1 beep final sostenido (1046.5 Hz / Do6, 350ms).
+ */
+function emitirAlertaAcusticaFinDescanso() {
+    if (!cronometroSonidoHabilitado()) return;
+
+    try {
+        const ctx = obtenerAudioContext();
+        if (!ctx) return;
+
+        const ahora = ctx.currentTime;
+
+        // Secuencia de 3 beeps cortos: t0, t0 + 0.15s, t0 + 0.30s (880 Hz, duración 80ms)
+        const beepsCortos = [0, 0.15, 0.30];
+        beepsCortos.forEach(offset => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const tInicio = ahora + offset;
+            const tFin = tInicio + 0.08;
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, tInicio);
+
+            gain.gain.setValueAtTime(0.0001, tInicio);
+            gain.gain.exponentialRampToValueAtTime(0.28, tInicio + 0.01);
+            gain.gain.setValueAtTime(0.28, tFin - 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, tFin);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(tInicio);
+            osc.stop(tFin);
+        });
+
+        // 1 beep final sostenido: t0 + 0.45s (1046.5 Hz / Do6, duración 350ms)
+        const oscFinal = ctx.createOscillator();
+        const gainFinal = ctx.createGain();
+        const tInicioFinal = ahora + 0.45;
+        const tFinFinal = tInicioFinal + 0.35;
+
+        oscFinal.type = 'sine';
+        oscFinal.frequency.setValueAtTime(1046.5, tInicioFinal);
+
+        gainFinal.gain.setValueAtTime(0.0001, tInicioFinal);
+        gainFinal.gain.exponentialRampToValueAtTime(0.32, tInicioFinal + 0.02);
+        gainFinal.gain.setValueAtTime(0.32, tFinFinal - 0.05);
+        gainFinal.gain.exponentialRampToValueAtTime(0.0001, tFinFinal);
+
+        oscFinal.connect(gainFinal);
+        gainFinal.connect(ctx.destination);
+
+        oscFinal.start(tInicioFinal);
+        oscFinal.stop(tFinFinal);
+    } catch (e) {
+        console.warn('Audio no permitido o bloqueado por el navegador:', e);
+    }
+}
+
+// Alias retrocompatible
+const emitirBipFinDescanso = emitirAlertaAcusticaFinDescanso;
+
+// ------------------------------------------------------------
+// A2. SCREEN WAKE LOCK API (PANTALLA SIEMPRE ENCENDIDA)
+// ------------------------------------------------------------
+
+let wakeLockSentinel = null;
+
+/**
+ * Solicita el bloqueo de pantalla encendida (Screen Wake Lock API)
+ * para evitar que el dispositivo suspenda la pantalla durante el entrenamiento activo.
+ */
+async function solicitarWakeLock() {
+    if ('wakeLock' in navigator && (!wakeLockSentinel || wakeLockSentinel.released)) {
+        try {
+            wakeLockSentinel = await navigator.wakeLock.request('screen');
+            wakeLockSentinel.addEventListener('release', () => {
+                wakeLockSentinel = null;
+            });
+        } catch (e) {
+            wakeLockSentinel = null;
+        }
+    }
+}
+
+/**
+ * Libera el bloqueo de pantalla encendida cuando finaliza o se cancela la sesión.
+ */
+async function liberarWakeLock() {
+    if (wakeLockSentinel) {
+        try {
+            await wakeLockSentinel.release();
+        } catch (e) {
+            // Manejo silencioso
+        }
+        wakeLockSentinel = null;
+    }
+}
+
+// Reactivar automáticamente el Wake Lock al regresar si hay entrenamiento en marcha
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        if (APP.entrenamientoActivo && APP.entrenamientoActivo.rutinaId) {
+            solicitarWakeLock();
+        }
+    }
+});
+
+// ------------------------------------------------------------
+// A3. GESTIÓN DE MICRO-NOTAS Y ETIQUETAS TÉCNICAS POR SERIE
+// ------------------------------------------------------------
+
+/**
+ * Actualiza en tiempo real los badges de resumen y el estado del botón NOTA en una tarjeta de serie.
+ * @param {HTMLElement} card - Elemento .serie-card o .serie-card-edicion
+ */
+function actualizarBadgesResumenSerie(card) {
+    if (!card) return;
+    const btnToggle = card.querySelector('.btn-toggle-nota');
+    const contenedorResumen = card.querySelector('.serie-badges-resumen');
+    const chipsActivos = Array.from(card.querySelectorAll('.chip-tag.activo')).map(c => c.dataset.tag || c.textContent.trim());
+    const inputNota = card.querySelector('.input-micro-nota');
+    const textoNota = inputNota ? inputNota.value.trim() : '';
+
+    const tieneDatos = chipsActivos.length > 0 || textoNota.length > 0;
+
+    if (btnToggle) {
+        if (tieneDatos) btnToggle.classList.add('tiene-datos');
+        else btnToggle.classList.remove('tiene-datos');
+    }
+
+    if (contenedorResumen) {
+        if (!tieneDatos) {
+            contenedorResumen.innerHTML = '';
+            contenedorResumen.classList.add('oculto');
+        } else {
+            let html = chipsActivos.map(tag => `<span class="badge-tag-resumen">${tag}</span>`).join('');
+            if (textoNota) {
+                html += `<span class="badge-nota-resumen">"${textoNota}"</span>`;
+            }
+            contenedorResumen.innerHTML = html;
+            contenedorResumen.classList.remove('oculto');
+        }
     }
 }
 
@@ -2745,7 +2961,7 @@ function tickCronometro() {
             } catch (e) {}
         }
 
-        emitirBipFinDescanso();
+        emitirAlertaAcusticaFinDescanso();
         mostrarToast('INTERVALO DE DESCANSO FINALIZADO');
     } else {
         actualizarVistaCronometro();
@@ -2757,6 +2973,7 @@ function tickCronometro() {
  * @param {number|null} segundos - Duración opcional en segundos
  */
 function iniciarCronometro(segundos = null) {
+    desbloquearAudioContext();
     if (APP.cronometro.intervalo) {
         clearInterval(APP.cronometro.intervalo);
         APP.cronometro.intervalo = null;
@@ -2791,6 +3008,7 @@ function iniciarCronometro(segundos = null) {
  * Pausa o reanuda el cronómetro.
  */
 function alternarPausaCronometro() {
+    desbloquearAudioContext();
     const btnPausar = document.getElementById('btn-cronometro-pausar');
     const elFlotante = document.getElementById('cronometro-flotante');
 
@@ -2819,6 +3037,7 @@ function alternarPausaCronometro() {
  * Reinicia el cronómetro al tiempo configurado actualmente.
  */
 function reiniciarCronometro() {
+    desbloquearAudioContext();
     const elFlotante = document.getElementById('cronometro-flotante');
     if (elFlotante) elFlotante.classList.remove('alerta');
     if (APP.cronometro.activo) {
@@ -2871,10 +3090,15 @@ function inicializarCronometro() {
     const btnCerrar = document.getElementById('btn-cronometro-cerrar');
     if (btnCerrar) btnCerrar.addEventListener('click', cerrarCronometro);
 
+    const btnSonido = document.getElementById('btn-cronometro-sonido');
+    if (btnSonido) btnSonido.addEventListener('click', alternarSonidoCronometro);
+    actualizarBotonSonidoCronometro();
+
     // Botones rápidos de selección de tiempo (3 min, 5 min, 8 min)
     const botonesTiempo = document.querySelectorAll('.btn-tiempo');
     botonesTiempo.forEach(btn => {
         btn.addEventListener('click', () => {
+            desbloquearAudioContext();
             const seg = parseInt(btn.dataset.tiempo, 10);
             if (!isNaN(seg)) {
                 APP.cronometro.segundosTotales = seg;
@@ -2971,6 +3195,9 @@ iniciarEntrenamiento = function(rutinaId) {
         ejercicios: []
     };
 
+    // Solicitar pantalla siempre encendida (Screen Wake Lock API)
+    solicitarWakeLock();
+
     // Actualizar encabezados
     const elTitulo = document.getElementById('titulo-entrenamiento');
     const elFecha = document.getElementById('fecha-entrenamiento');
@@ -3006,9 +3233,19 @@ iniciarEntrenamiento = function(rutinaId) {
             return `
                 <div class="serie-card ${claseCard}" data-ej-index="${indexEj}" data-serie-index="${indexSerie}" data-tipo="${serie.tipo}">
                     <div class="serie-header">
-                        <span class="serie-tipo">${etiquetaTipo}</span>
-                        <span class="serie-numero">Serie ${indexSerie + 1}</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="serie-tipo">${etiquetaTipo}</span>
+                            <span class="serie-numero">Serie ${indexSerie + 1}</span>
+                        </div>
+                        <button type="button" class="btn-toggle-nota" aria-label="Notas y sensaciones de la serie" title="Añadir notas técnicas">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                            <span>NOTA</span>
+                        </button>
                     </div>
+                    <div class="serie-badges-resumen oculto"></div>
                     <div class="serie-inputs">
                         <div class="campo-grupo">
                             <label>Peso (kg)</label>
@@ -3033,6 +3270,16 @@ iniciarEntrenamiento = function(rutinaId) {
                                 <input type="number" class="input-rpe" value="${rpeSugerido}" step="0.5" min="5" max="10" inputmode="decimal">
                                 <button type="button" class="stepper-btn stepper-mas" data-step="0.5">+</button>
                             </div>
+                        </div>
+                    </div>
+                    <div class="serie-panel-nota oculto">
+                        <div class="chips-tags-tecnicos">
+                            ${CHIPS_TECNICOS_DISPONIBLES.map(chip => `
+                                <button type="button" class="chip-tag" data-tag="${chip}">${chip}</button>
+                            `).join('')}
+                        </div>
+                        <div class="campo-micro-nota">
+                            <input type="text" class="input-micro-nota" maxlength="60" placeholder="Sensaciones técnicas (máx. 60 caracteres)...">
                         </div>
                     </div>
                     <button type="button" class="btn-check" aria-label="Completar serie"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETAR</button>
@@ -3075,7 +3322,7 @@ function inicializarEventosEntrenamientoActivo() {
     const contenedor = document.getElementById('contenido-entrenamiento');
     if (!contenedor) return;
 
-    // 1. Escuchar cambios de peso para actualizar el % 1RM en vivo
+    // 1. Escuchar cambios de peso para actualizar el % 1RM en vivo y notas
     contenedor.addEventListener('input', (e) => {
         if (e.target.classList.contains('input-peso')) {
             const bloque = e.target.closest('.bloque-ejercicio');
@@ -3084,11 +3331,45 @@ function inicializarEventosEntrenamientoActivo() {
                 const marcas = obtenerMarcas1RM();
                 actualizarPorcentajeBloque(bloque, cat, marcas);
             }
+        } else if (e.target.classList.contains('input-micro-nota')) {
+            const card = e.target.closest('.serie-card');
+            if (card) {
+                actualizarBadgesResumenSerie(card);
+            }
         }
     });
 
-    // 2. Click en botón "Check" de serie completada
+    // 2. Click en botón "Check", panel de notas o chips técnicos
     contenedor.addEventListener('click', (e) => {
+        // Toggle de panel de micro-notas
+        const btnToggleNota = e.target.closest('.btn-toggle-nota');
+        if (btnToggleNota) {
+            const card = btnToggleNota.closest('.serie-card');
+            if (card) {
+                const panel = card.querySelector('.serie-panel-nota');
+                if (panel) {
+                    panel.classList.toggle('oculto');
+                    btnToggleNota.classList.toggle('activo', !panel.classList.contains('oculto'));
+                    if (!panel.classList.contains('oculto')) {
+                        const inputNota = panel.querySelector('.input-micro-nota');
+                        if (inputNota) inputNota.focus();
+                    }
+                }
+            }
+            return;
+        }
+
+        // Selección de chips de etiquetas técnicas
+        const btnChip = e.target.closest('.chip-tag');
+        if (btnChip) {
+            const card = btnChip.closest('.serie-card');
+            if (card) {
+                btnChip.classList.toggle('activo');
+                actualizarBadgesResumenSerie(card);
+            }
+            return;
+        }
+
         const btnCheck = e.target.closest('.btn-check');
         if (!btnCheck) return;
 
@@ -3125,6 +3406,13 @@ function inicializarEventosEntrenamientoActivo() {
     if (btnVolver) {
         btnVolver.addEventListener('click', () => {
             mostrarConfirmacion('¿Salir del entrenamiento? Los datos de la sesión actual no se guardarán.', () => {
+                liberarWakeLock();
+                APP.entrenamientoActivo = {
+                    rutinaId: null,
+                    rutinaNombre: '',
+                    fechaInicio: null,
+                    ejercicios: []
+                };
                 cerrarCronometro();
                 navegarA('vista-entrenar');
             }, 'Salir');
@@ -3141,6 +3429,7 @@ function inicializarEventosEntrenamientoActivo() {
     const btnToggleCrono = document.getElementById('btn-toggle-crono');
     if (btnToggleCrono) {
         btnToggleCrono.addEventListener('click', () => {
+            desbloquearAudioContext();
             const elFlotante = document.getElementById('cronometro-flotante');
             if (!elFlotante) return;
 
@@ -3198,6 +3487,10 @@ function finalizarEntrenamiento() {
             const completada = card.classList.contains('completada');
             const tipo = card.dataset.tipo || 'warmup';
 
+            const tags = Array.from(card.querySelectorAll('.chip-tag.activo')).map(c => c.dataset.tag || c.textContent.trim());
+            const inputNota = card.querySelector('.input-micro-nota');
+            const nota = inputNota ? inputNota.value.trim() : '';
+
             if (completada) {
                 totalSeriesCompletadas++;
                 volumenTotalKg += (peso * reps);
@@ -3208,7 +3501,9 @@ function finalizarEntrenamiento() {
                 peso: peso,
                 reps: reps,
                 rpe: rpe,
-                completada: completada
+                completada: completada,
+                tags: tags,
+                nota: nota
             });
         });
 
@@ -3254,6 +3549,15 @@ function guardarSesionEnHistorial(ejercicios, seriesCompletadas, volumenKg) {
     const historial = obtenerHistorial();
     historial.unshift(nuevaSesion); // Sesión más reciente al principio
     guardarHistorial(historial);
+
+    // Liberar Screen Wake Lock y resetear estado del entrenamiento activo
+    liberarWakeLock();
+    APP.entrenamientoActivo = {
+        rutinaId: null,
+        rutinaNombre: '',
+        fechaInicio: null,
+        ejercicios: []
+    };
 
     // Calcular y actualizar marcas 1RM automáticamente a partir de la sesión
     const nuevosRecords = calcularYActualizar1RM(nuevaSesion);
@@ -3323,6 +3627,17 @@ abrirDetalleSesion = function(sesionId) {
                 const estadoIcono = serie.completada ? 'OK' : '--';
                 const estadoColor = serie.completada ? 'var(--verde)' : 'var(--gris-medio)';
 
+                const tags = Array.isArray(serie.tags) ? serie.tags : [];
+                const tieneNota = Boolean(serie.nota && serie.nota.trim());
+                const tieneMeta = tags.length > 0 || tieneNota;
+
+                const metaHtml = tieneMeta ? `
+                    <div class="detalle-serie-meta">
+                        ${tags.map(t => `<span class="badge-micro-tag">${t}</span>`).join('')}
+                        ${tieneNota ? `<span class="detalle-serie-nota">"${serie.nota.trim()}"</span>` : ''}
+                    </div>
+                ` : '';
+
                 return `
                     <div class="detalle-serie">
                         <span class="tarjeta-badge ${tipoClase} detalle-serie-tipo">${tipoTexto}</span>
@@ -3332,6 +3647,7 @@ abrirDetalleSesion = function(sesionId) {
                             <span class="detalle-serie-valor"><strong>@${serie.rpe}</strong> <span>RPE</span></span>
                         </div>
                         <span style="color: ${estadoColor}; font-weight: bold; font-size: 1.1rem;">${estadoIcono}</span>
+                        ${metaHtml}
                     </div>
                 `;
             }).join('');
@@ -3528,6 +3844,11 @@ function renderizarCuerpoEditorSesion() {
             const rpeVal = serie.rpe !== undefined ? serie.rpe : 8;
             const completada = serie.completada !== false;
 
+            const tagsActuales = Array.isArray(serie.tags) ? serie.tags : [];
+            const notaActual = (typeof serie.nota === 'string') ? serie.nota.trim() : '';
+            const tieneDatosNota = tagsActuales.length > 0 || notaActual.length > 0;
+            const notaEscapada = notaActual.replace(/"/g, '&quot;');
+
             return `
                 <div class="serie-card serie-card-edicion ${claseCard}" data-ej-idx="${ejIdx}" data-serie-idx="${serieIdx}">
                     <div class="serie-header-edicion">
@@ -3536,6 +3857,13 @@ function renderizarCuerpoEditorSesion() {
                             <span class="serie-tipo">${etiquetaBadge}</span>
                         </div>
                         <div class="serie-acciones-header">
+                            <button type="button" class="btn-toggle-nota ${tieneDatosNota ? 'tiene-datos' : ''}" data-ej-idx="${ejIdx}" data-serie-idx="${serieIdx}" aria-label="Notas y sensaciones técnicas" title="Añadir notas técnicas">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9"/>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                </svg>
+                                <span>NOTA</span>
+                            </button>
                             <label class="switch-calentamiento" title="Marcar como serie de calentamiento">
                                 <input type="checkbox" class="check-warmup-serie" data-ej-idx="${ejIdx}" data-serie-idx="${serieIdx}" ${serie.esWarmup ? 'checked' : ''}>
                                 <span class="switch-slider"></span>
@@ -3548,6 +3876,10 @@ function renderizarCuerpoEditorSesion() {
                                 </svg>
                             </button>
                         </div>
+                    </div>
+                    <div class="serie-badges-resumen ${tieneDatosNota ? '' : 'oculto'}">
+                        ${tagsActuales.map(t => `<span class="badge-tag-resumen">${t}</span>`).join('')}
+                        ${notaActual ? `<span class="badge-nota-resumen">"${notaActual}"</span>` : ''}
                     </div>
                     <div class="serie-inputs">
                         <div class="campo-grupo">
@@ -3573,6 +3905,17 @@ function renderizarCuerpoEditorSesion() {
                                 <input type="number" class="input-rpe-edicion" value="${rpeVal}" step="0.5" min="5" max="10" inputmode="decimal">
                                 <button type="button" class="stepper-btn stepper-mas" data-step="0.5">+</button>
                             </div>
+                        </div>
+                    </div>
+                    <div class="serie-panel-nota oculto">
+                        <div class="chips-tags-tecnicos">
+                            ${CHIPS_TECNICOS_DISPONIBLES.map(chip => {
+                                const activo = tagsActuales.includes(chip);
+                                return `<button type="button" class="chip-tag ${activo ? 'activo' : ''}" data-tag="${chip}">${chip}</button>`;
+                            }).join('')}
+                        </div>
+                        <div class="campo-micro-nota">
+                            <input type="text" class="input-micro-nota" maxlength="60" value="${notaEscapada}" placeholder="Sensaciones técnicas (máx. 60 caracteres)...">
                         </div>
                     </div>
                     <button type="button" class="btn-check btn-check-edicion ${completada ? 'checked' : ''}" data-ej-idx="${ejIdx}" data-serie-idx="${serieIdx}">
@@ -3638,13 +3981,19 @@ function sincronizarDatosEditorSesionDesdeDOM() {
             const esWarmup = checkWarmup ? checkWarmup.checked : false;
             const completada = btnCheck ? btnCheck.classList.contains('checked') : true;
 
+            const tags = Array.from(card.querySelectorAll('.chip-tag.activo')).map(c => c.dataset.tag || c.textContent.trim());
+            const inputNota = card.querySelector('.input-micro-nota');
+            const nota = inputNota ? inputNota.value.trim() : '';
+
             seriesData.push({
                 esWarmup: esWarmup,
                 tipo: esWarmup ? 'warmup' : 'plana',
                 peso: peso,
                 reps: reps,
                 rpe: rpe,
-                completada: completada
+                completada: completada,
+                tags: tags,
+                nota: nota
             });
         });
 
@@ -3736,8 +4085,49 @@ function inicializarModalEditarSesion() {
     if (btnGuardar) btnGuardar.addEventListener('click', guardarEdicionSesion);
 
     if (contenedor) {
-        // Delegación de eventos para clicks: formato, añadir serie, eliminar serie y check
+        // Escucha cambios en inputs de texto de micro-notas para refrescar resumen
+        contenedor.addEventListener('input', (e) => {
+            if (e.target.classList.contains('input-micro-nota')) {
+                const card = e.target.closest('.serie-card-edicion');
+                if (card) {
+                    actualizarBadgesResumenSerie(card);
+                    sincronizarDatosEditorSesionDesdeDOM();
+                }
+            }
+        });
+
+        // Delegación de eventos para clicks: formato, notas, tags, añadir serie, eliminar serie y check
         contenedor.addEventListener('click', (e) => {
+            // Toggle panel de micro-notas en modo edición
+            const btnToggleNota = e.target.closest('.btn-toggle-nota');
+            if (btnToggleNota) {
+                const card = btnToggleNota.closest('.serie-card-edicion');
+                if (card) {
+                    const panel = card.querySelector('.serie-panel-nota');
+                    if (panel) {
+                        panel.classList.toggle('oculto');
+                        btnToggleNota.classList.toggle('activo', !panel.classList.contains('oculto'));
+                        if (!panel.classList.contains('oculto')) {
+                            const inputNota = panel.querySelector('.input-micro-nota');
+                            if (inputNota) inputNota.focus();
+                        }
+                    }
+                }
+                return;
+            }
+
+            // Selección de chips de etiquetas en modo edición
+            const btnChip = e.target.closest('.chip-tag');
+            if (btnChip) {
+                const card = btnChip.closest('.serie-card-edicion');
+                if (card) {
+                    btnChip.classList.toggle('activo');
+                    actualizarBadgesResumenSerie(card);
+                    sincronizarDatosEditorSesionDesdeDOM();
+                }
+                return;
+            }
+
             // 1. Alternar formato de ejercicio: TOP SET vs PLANAS
             const btnFormato = e.target.closest('.switch-formato-ejercicio .btn-formato');
             if (btnFormato) {
@@ -3770,7 +4160,9 @@ function inicializarModalEditarSesion() {
                         peso: ultima ? ultima.peso : 20,
                         reps: ultima ? ultima.reps : 5,
                         rpe: ultima ? ultima.rpe : 8,
-                        completada: true
+                        completada: true,
+                        tags: [],
+                        nota: ''
                     });
                     actualizarTiposSeriesEjercicio(ej);
                     renderizarCuerpoEditorSesion();
@@ -4059,7 +4451,7 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
             .then((registration) => {
                 console.log('[PWA] Service Worker registrado con éxito. Scope:', registration.scope);
-                // Comprobar automáticamente si hay una nueva versión en GitHub Pages
+                // Comprobar automáticamente si hay una nueva versión
                 registration.update();
             })
             .catch((error) => {

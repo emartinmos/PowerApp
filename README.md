@@ -20,6 +20,9 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
 ### Registro de Sesión en Vivo (Live Tracker)
 - Controles táctiles optimizados (Steppers `+` / `-`) con incrementos técnicos calibrados: saltos de 2.5 kg en peso, 1 unidad en repeticiones y 0.5 en RPE.
 - Cálculo dinámico e instantáneo del porcentaje sobre el 1RM (`% 1RM`) por cada bloque de ejercicio.
+- **Pantalla Siempre Encendida (Screen Wake Lock API):** Bloqueo automático de suspensión del panel durante toda la sesión activa de entrenamiento, con reenganche automático al volver a la PWA tras minimizarla o cambiar de app.
+- **Alertas Acústicas Sintetizadas (Web Audio API):** Señalización sonora de cronómetro deportivo al expirar el tiempo de descanso (patrón de 3 pitidos cortos de 880 Hz / La5 seguidos de 1 pitido final sostenido de 1046.5 Hz / Do6), sintetizada en tiempo real sin cargar ficheros de audio externos, con desbloqueo para navegadores móviles y botón de silencio persistido (`pl_crono_sonido`).
+- **Micro-Notas y Etiquetas Técnicas por Serie:** Panel técnico desplegable por serie para registrar sensaciones inmediatas mediante chips rápidos (`Pausa limpia`, `Sticking point`, `Pérdida de línea`, `Grip al límite`, `Sin cinto`, `Muñequeras/Rodilleras`) y micro-nota escrita libre (máx. 60 caracteres), visibles en el entrenamiento activo y persistidas como insignias tanto en el visor de historial como en el editor retrospectivo.
 - Cronómetro de descanso manual flotante con temporizadores preconfigurados (3:00, 5:00, 8:00 min) y alertas hápticas/visuales de fin de pausa.
 
 ### Calculadora Visual de Carga de Barra (Competición IPF)
@@ -43,9 +46,9 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
   - Cálculo instantáneo de **Puntos DOTS** mediante polinomio de 4º grado para comparación normalizada entre categorías de peso.
 
 ### Control de Versiones y Notas de Parche (Changelog)
-- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.2`) con tipografía en números tabulares e icono vectorial.
+- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.3`) con tipografía en números tabulares e icono vectorial.
 - Indicador luminoso en rojo carmesí de versión no leída, sincronizado automáticamente contra `localStorage` (`ultimaVersionLeida` vs `APP_VERSION`).
-- Modal técnico de lectura con desglose cronológico de versiones, fechas y cambios detallados (v1.2.0 actual, v1.1.0 y v1.0.0 inicial).
+- Modal técnico de lectura con desglose cronológico de versiones, fechas y cambios detallados (v1.3.0 actual, v1.2.0, v1.1.0 y v1.0.0 inicial).
 
 ### Operación 100% Offline y Persistencia Local
 - Almacenamiento local persistente sin necesidad de backend o bases de datos remotas mediante `localStorage`.
