@@ -16,7 +16,7 @@ const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 const NOTAS_DE_PARCHE = [
     {
         version: 'v1.3.0',
-        fecha: '06/10/2026',
+        fecha: '07/10/2026',
         titulo: 'Pantalla Encendida (Wake Lock), Alertas Acústicas y Micro-Notas Técnicas',
         cambios: [
             'Integración de Screen Wake Lock API para mantener la pantalla encendida durante el entrenamiento activo y reenganche automático al volver a la app.',
