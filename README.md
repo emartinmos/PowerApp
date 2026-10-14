@@ -10,7 +10,16 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
 - Configuración de estructuras específicas de Powerlifting: esquemas combinados `Top Set + Back-off` y `Series Planas`.
 - Segmentación por series de aproximación (`Warm-up`), series efectivas pesadas (`Top Set`) y volumen de descarga (`Back-off`).
 - Definición de objetivos de repeticiones y esfuerzo percibido mediante escala RPE (Rating of Perceived Exertion) con granularidad de 0.5 puntos.
+- **Autorregulación de Carga para Back-Offs:** Vinculación algorítmica entre el `Top Set` y las series de `Back-off` del mismo ejercicio con caída porcentual configurable (`-5%`, `-10%`, `-15%`, `-20%` o `Manual`). Al completar o editar la carga del Top Set, la aplicación inyecta en vivo los kilos calculados en las cajas de texto de los Back-offs correspondientes, redondeados a múltiplos de 2.5 kg ($\ge 20\text{ kg}$).
 - **Clonación y Duplicación Rápida:** Botón de duplicación directa en un solo toque que clona toda la estructura de series y ejercicios con nomenclatura inteligente de progresión (incremento automático de `Semana X` a `Semana X+1`, `Microciclo X`, o sufijo incremental de copia).
+
+### Planificador de Intentos de Tarima y Competición (Meet Day)
+- Nueva vista principal dedicada (`TARIMA`) accesible permanentemente desde el bottom nav para el control del día de competición.
+- Tarjetas técnicas para los 3 movimientos reglamentarios: Sentadilla (`01 SENTADILLA`), Press de Banca (`02 PRESS BANCA`) y Peso Muerto (`03 PESO MUERTO`), con 3 intentos planificados por movimiento y controles Stepper rápidos.
+- **Simulación Visual de Luces de Arbitraje IPF:** Sistema de validación de intentos con ciclo interactivo `PENDIENTE` $\to$ `3 BLANCAS (VÁLIDO)` $\to$ `NULO`. Representación gráfica de las 3 luces arbitrales (blancas con borde verde `#15803D` o rojas `#E50914`).
+- **Cálculo de Total Oficial en Tiempo Real:** Detección automática del mejor intento válido completado en cada movimiento y cálculo del Total Oficial de competición.
+- **Proyección de Coeficientes de Tarima:** Cálculo dinámico de Puntos IPF GL y Puntos DOTS calculados directamente sobre el Total Oficial y el peso corporal registrado.
+- **Carga Predictiva desde 1RM:** Botón `CARGAR 1RM` que calcula y distribuye automáticamente una apertura al 91%, segundo intento al 96% y tercer intento al 100% del 1RM registrado en cada básico.
 
 ### Catálogo de Ejercicios Extenso y Modular
 - Base de datos local en JSON con más de 250 variantes técnicas de movimientos de competición de IPF (Sentadilla, Press de Banca y Peso Muerto) y accesorios específicos de hipertrofia muscular.
@@ -32,12 +41,13 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
 - Selección configurable de tipo de barra (`20 kg` estándar, `25 kg` squat bar, `15 kg` barra corta) y collarines de competición (`+5 kg` total / `2.5 kg` por lado) o levantamiento sin collarines.
 - Renderizado gráfico dimensional del manguito (*sleeve*), tope interior y collarín de bloqueo de seguridad con chips de desglose numérico.
 
-### Gestión de 1RM y Coeficientes Oficiales (IPF GL & DOTS)
+### Gestión de 1RM, Coeficientes y Tendencia de Fuerza
 - Actualización automática de récords personales al finalizar cualquier entrenamiento:
   - **PR Real:** Carga máxima absoluta superada a 1 o más repeticiones.
   - **e1RM Estimado:** Repetición máxima teórica calculada mediante la fórmula de Epley ajustada por RIR (Reps in Reserve / RPE):
     $$\text{e1RM} = \text{Peso} \times \left(1 + \frac{\text{Reps} + (10 - \text{RPE})}{30}\right)$$
 - Recálculo dinámico de marcas históricas tras la edición o eliminación retrospectiva de sesiones.
+- **Gráficas Vectoriales Nativas de Tendencia (Sparklines SVG):** Visualización interactiva desplegable de la evolución temporal del e1RM por básico (Sentadilla, Banca o Peso Muerto) renderizada al vuelo mediante SVG puro sin bibliotecas externas pesadas. Incluye gradiente sombreado, cuadrícula técnica de cargas, línea temporal de fechas y resalte luminoso del PR histórico absoluto.
 - Calculadora técnica de porcentajes de carga (del 50% al 100% del 1RM).
 - **Calculadora Automática de Coeficientes de Competición:**
   - Panel integrado en la vista de 1RM con configuración persistida de Peso Corporal (kg) y Sexo biológico (M / F).
@@ -46,9 +56,9 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
   - Cálculo instantáneo de **Puntos DOTS** mediante polinomio de 4º grado para comparación normalizada entre categorías de peso.
 
 ### Control de Versiones y Notas de Parche (Changelog)
-- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.3`) con tipografía en números tabulares e icono vectorial.
+- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.4`) con tipografía en números tabulares e icono vectorial.
 - Indicador luminoso en rojo carmesí de versión no leída, sincronizado automáticamente contra `localStorage` (`ultimaVersionLeida` vs `APP_VERSION`).
-- Modal técnico de lectura con desglose cronológico de versiones, fechas y cambios detallados (v1.3.0 actual, v1.2.0, v1.1.0 y v1.0.0 inicial).
+- Modal técnico de lectura con desglose cronológico de versiones, fechas y cambios detallados (v1.4.0 actual, v1.3.0, v1.2.0, v1.1.0 y v1.0.0 inicial).
 
 ### Operación 100% Offline y Persistencia Local
 - Almacenamiento local persistente sin necesidad de backend o bases de datos remotas mediante `localStorage`.

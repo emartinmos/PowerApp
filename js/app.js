@@ -10,10 +10,23 @@
 // 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
 // ============================================================
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 
 const NOTAS_DE_PARCHE = [
+    {
+        version: 'v1.4.0',
+        fecha: '14/10/2026',
+        titulo: 'Tarima de Competición, Gráficas de Tendencia SVG y Autorregulación Back-Off',
+        cambios: [
+            'Planificador interactivo de intentos de competición (Meet Day) con simulación reglamentaria de 3 luces arbitrales IPF (blancas y rojas).',
+            'Cálculo en tiempo real del Total Oficial de tarima y proyección instantánea de Puntos IPF GL y DOTS según peso y sexo del atleta.',
+            'Botón de predicción de intentos con precarga inteligente al 91%, 96% y 100% a partir de los 1RMs registrados.',
+            'Autorregulación de series Back-off respecto al Top Set con cálculo e inyección automática de kilos redondeados a 2.5 kg.',
+            'Selector directo de porcentaje de caída (-5%, -10%, -15%, -20% o Manual) tanto en el constructor de plantillas como en el entrenamiento activo.',
+            'Gráficas vectoriales nativas de tendencia de fuerza (Sparklines SVG) sin librerías externas para Sentadilla, Banca y Peso Muerto, con resalte visual del PR histórico.'
+        ]
+    },
     {
         version: 'v1.3.0',
         fecha: '07/10/2026',
@@ -227,7 +240,8 @@ const LS_KEYS = {
     HISTORIAL: 'pl_historial',
     EJERCICIOS_CUSTOM: 'pl_ejercicios_custom',
     MARCAS_1RM: 'pl_marcas_1rm',
-    CRONO_SONIDO: 'pl_crono_sonido'
+    CRONO_SONIDO: 'pl_crono_sonido',
+    COMPETICION: 'pl_meet_day'
 };
 
 // Etiquetas técnicas rápidas disponibles para micro-notas por serie
@@ -588,7 +602,7 @@ function obtenerNombreCategoria(categoriaId) {
 // ============================================================
 
 // IDs de las vistas principales accesibles desde el bottom nav
-const VISTAS_NAV = ['vista-entrenar', 'vista-constructor', 'vista-historial'];
+const VISTAS_NAV = ['vista-entrenar', 'vista-constructor', 'vista-competicion', 'vista-historial'];
 
 // Todas las vistas (incluidas las que no están en el nav)
 const TODAS_LAS_VISTAS = [
@@ -596,6 +610,7 @@ const TODAS_LAS_VISTAS = [
     'vista-entrenamiento',
     'vista-constructor',
     'vista-editor-rutina',
+    'vista-competicion',
     'vista-historial'
 ];
 
@@ -677,9 +692,16 @@ function inicializarNavegacion() {
                     renderizarRutinasEntrenar();
                 } else if (vistaId === 'vista-constructor') {
                     renderizarRutinasConstructor();
+                } else if (vistaId === 'vista-competicion') {
+                    if (typeof renderizarMeetDay === 'function') {
+                        renderizarMeetDay();
+                    }
                 } else if (vistaId === 'vista-historial') {
                     renderizarHistorial();
                     actualizarTabla1RM();
+                    if (typeof renderizarGraficaEvolucion === 'function') {
+                        renderizarGraficaEvolucion();
+                    }
                 }
             }
         });
@@ -725,6 +747,11 @@ function inicializarTabs() {
             const contenido = document.getElementById(targetId);
             if (contenido) {
                 contenido.classList.add('activo');
+            }
+
+            // Si entra a tab-1rm, refrescar la gráfica de evolución si el panel está expandido
+            if (targetId === 'tab-1rm' && typeof renderizarGraficaEvolucion === 'function') {
+                renderizarGraficaEvolucion();
             }
         });
     });
@@ -2154,6 +2181,7 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
     const inputRepsTop = document.getElementById('input-reps-objetivo');
     const inputRpeTop = document.getElementById('input-rpe-objetivo');
     const inputRepsBackoff = document.getElementById('input-reps-backoff');
+    const selectCaidaBackoff = document.getElementById('select-backoff-caida');
 
     const inputPlanasWarmup = document.getElementById('input-planas-warmup');
     const inputPlanasSeries = document.getElementById('input-planas-series');
@@ -2183,6 +2211,7 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
             if (inputRepsTop) inputRepsTop.value = 3;
             if (inputRpeTop) inputRpeTop.value = 8;
             if (inputRepsBackoff) inputRepsBackoff.value = 5;
+            if (selectCaidaBackoff) selectCaidaBackoff.value = '-10';
         } else {
             cambiarFormatoSeriesModal('topset');
             if (inputWarmup) inputWarmup.value = configExistente.warmup ?? 2;
@@ -2191,6 +2220,7 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
             if (inputRepsTop) inputRepsTop.value = configExistente.repsTop ?? 3;
             if (inputRpeTop) inputRpeTop.value = configExistente.rpeTop ?? 8;
             if (inputRepsBackoff) inputRepsBackoff.value = configExistente.repsBackoff ?? 5;
+            if (selectCaidaBackoff) selectCaidaBackoff.value = String(configExistente.caidaBackoff !== undefined ? configExistente.caidaBackoff : -10);
 
             if (inputPlanasWarmup) inputPlanasWarmup.value = 1;
             if (inputPlanasSeries) inputPlanasSeries.value = 3;
@@ -2206,6 +2236,7 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
         if (inputRepsTop) inputRepsTop.value = 3;
         if (inputRpeTop) inputRpeTop.value = 8;
         if (inputRepsBackoff) inputRepsBackoff.value = 5;
+        if (selectCaidaBackoff) selectCaidaBackoff.value = '-10';
 
         if (inputPlanasWarmup) inputPlanasWarmup.value = 1;
         if (inputPlanasSeries) inputPlanasSeries.value = 3;
@@ -2319,6 +2350,8 @@ function confirmarConfigSeries() {
             });
         }
 
+        const caidaBackoff = parseFloat(document.getElementById('select-backoff-caida')?.value ?? '-10');
+
         // 3. Series efectivas de bajada (Back-off Sets)
         for (let i = 1; i <= backoffCount; i++) {
             seriesConstruidas.push({
@@ -2326,7 +2359,8 @@ function confirmarConfigSeries() {
                 etiqueta: 'Back-off',
                 repsObjetivo: repsBackoff,
                 rpeObjetivo: Math.max(5, rpeTop - 1),
-                pesoSugerido: 0
+                pesoSugerido: 0,
+                caidaPorcentaje: caidaBackoff
             });
         }
 
@@ -2340,7 +2374,8 @@ function confirmarConfigSeries() {
                 backoff: backoffCount,
                 repsTop: repsTop,
                 rpeTop: rpeTop,
-                repsBackoff: repsBackoff
+                repsBackoff: repsBackoff,
+                caidaBackoff: caidaBackoff
             },
             series: seriesConstruidas
         };
@@ -3223,6 +3258,7 @@ iniciarEntrenamiento = function(rutinaId) {
             const esTopSet = serie.tipo === 'topset';
             const esWarmup = serie.tipo === 'warmup';
             const esPlana = serie.tipo === 'plana';
+            const esBackoff = serie.tipo === 'backoff';
             const claseCard = esTopSet ? 'serie-topset' : (esWarmup ? 'serie-warmup' : (esPlana ? 'serie-plana' : 'serie-backoff'));
             const etiquetaTipo = esTopSet ? 'Top Set' : (esWarmup ? 'Warm-up' : (esPlana ? 'Plana' : 'Back-off'));
 
@@ -3230,12 +3266,26 @@ iniciarEntrenamiento = function(rutinaId) {
             const repsSugeridas = serie.repsObjetivo || (esTopSet ? 3 : (esPlana ? 8 : 5));
             const rpeSugerido = serie.rpeObjetivo || (esTopSet ? 8 : (esPlana ? 8 : 6));
 
+            const caidaDefecto = (serie.caidaPorcentaje !== undefined) ? serie.caidaPorcentaje : -10;
+            const selectorBackoffHtml = esBackoff ? `
+                <div class="selector-caida-backoff-wrap">
+                    <select class="select-caida-backoff" aria-label="Porcentaje de caída vs Top Set" data-ej-index="${indexEj}" data-serie-index="${indexSerie}">
+                        <option value="-5" ${caidaDefecto === -5 ? 'selected' : ''}>-5%</option>
+                        <option value="-10" ${caidaDefecto === -10 ? 'selected' : ''}>-10%</option>
+                        <option value="-15" ${caidaDefecto === -15 ? 'selected' : ''}>-15%</option>
+                        <option value="-20" ${caidaDefecto === -20 ? 'selected' : ''}>-20%</option>
+                        <option value="0" ${caidaDefecto === 0 ? 'selected' : ''}>Manual</option>
+                    </select>
+                </div>
+            ` : '';
+
             return `
                 <div class="serie-card ${claseCard}" data-ej-index="${indexEj}" data-serie-index="${indexSerie}" data-tipo="${serie.tipo}">
                     <div class="serie-header">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span class="serie-tipo">${etiquetaTipo}</span>
                             <span class="serie-numero">Serie ${indexSerie + 1}</span>
+                            ${selectorBackoffHtml}
                         </div>
                         <button type="button" class="btn-toggle-nota" aria-label="Notas y sensaciones de la serie" title="Añadir notas técnicas">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3322,20 +3372,63 @@ function inicializarEventosEntrenamientoActivo() {
     const contenedor = document.getElementById('contenido-entrenamiento');
     if (!contenedor) return;
 
-    // 1. Escuchar cambios de peso para actualizar el % 1RM en vivo y notas
+    // Función para calcular e inyectar automáticamente la carga en Back-offs desde el Top Set
+    function actualizarCargasBackoffsDesdeTopSet(bloque) {
+        if (!bloque) return;
+        const cardTop = bloque.querySelector('.serie-card[data-tipo="topset"]');
+        if (!cardTop) return;
+        const pesoTop = parseFloat(cardTop.querySelector('.input-peso')?.value) || 0;
+        if (pesoTop <= 0) return;
+
+        const cardsBackoff = bloque.querySelectorAll('.serie-card[data-tipo="backoff"]');
+        let actualizados = 0;
+        cardsBackoff.forEach(card => {
+            const selectCaida = card.querySelector('.select-caida-backoff');
+            const caida = selectCaida ? parseFloat(selectCaida.value) : -10;
+            if (caida !== 0) {
+                const factor = 1 + (caida / 100);
+                const pesoCalc = Math.max(20, Math.round((pesoTop * factor) / 2.5) * 2.5);
+                const inputPeso = card.querySelector('.input-peso');
+                if (inputPeso && parseFloat(inputPeso.value) !== pesoCalc) {
+                    inputPeso.value = pesoCalc;
+                    inputPeso.classList.remove('peso-auto-actualizado');
+                    void inputPeso.offsetWidth;
+                    inputPeso.classList.add('peso-auto-actualizado');
+                    actualizados++;
+                }
+            }
+        });
+        if (actualizados > 0) {
+            mostrarToast(`BACK-OFFS CALCULADOS (${actualizados})`);
+        }
+    }
+
+    // 1. Escuchar cambios de peso para actualizar el % 1RM en vivo, notas y back-offs
     contenedor.addEventListener('input', (e) => {
         if (e.target.classList.contains('input-peso')) {
             const bloque = e.target.closest('.bloque-ejercicio');
+            const card = e.target.closest('.serie-card');
             if (bloque) {
                 const cat = bloque.dataset.categoria;
                 const marcas = obtenerMarcas1RM();
                 actualizarPorcentajeBloque(bloque, cat, marcas);
+                if (card && card.dataset.tipo === 'topset') {
+                    actualizarCargasBackoffsDesdeTopSet(bloque);
+                }
             }
         } else if (e.target.classList.contains('input-micro-nota')) {
             const card = e.target.closest('.serie-card');
             if (card) {
                 actualizarBadgesResumenSerie(card);
             }
+        }
+    });
+
+    // Escuchar cambios en el selector de caída de back-offs
+    contenedor.addEventListener('change', (e) => {
+        if (e.target.classList.contains('select-caida-backoff')) {
+            const bloque = e.target.closest('.bloque-ejercicio');
+            actualizarCargasBackoffsDesdeTopSet(bloque);
         }
     });
 
@@ -3383,6 +3476,12 @@ function inicializarEventosEntrenamientoActivo() {
             card.classList.add('completada');
             btnCheck.classList.add('checked');
             btnCheck.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETADA';
+
+            // Si es un Top Set, recalcular e inyectar Back-offs automáticamente
+            if (card.dataset.tipo === 'topset') {
+                const bloque = card.closest('.bloque-ejercicio');
+                actualizarCargasBackoffsDesdeTopSet(bloque);
+            }
 
             // Comprobar si todas las series del entrenamiento están completadas
             const todasLasSeries = contenedor.querySelectorAll('.serie-card');
@@ -4321,6 +4420,516 @@ function inicializarDelegacionHistorial() {
     });
 }
 
+// ============================================================
+// 15. MÓDULO PLANIFICADOR DE TARIMA / MEET DAY (COMPETICIÓN)
+// ============================================================
+
+const MEET_DAY_DEFECTO = {
+    pesoCorporal: 83.0,
+    sexo: 'M',
+    intentos: {
+        squat: [
+            { peso: 0, estado: 'pendiente' },
+            { peso: 0, estado: 'pendiente' },
+            { peso: 0, estado: 'pendiente' }
+        ],
+        bench: [
+            { peso: 0, estado: 'pendiente' },
+            { peso: 0, estado: 'pendiente' },
+            { peso: 0, estado: 'pendiente' }
+        ],
+        deadlift: [
+            { peso: 0, estado: 'pendiente' },
+            { peso: 0, estado: 'pendiente' },
+            { peso: 0, estado: 'pendiente' }
+        ]
+    }
+};
+
+function obtenerDatosCompeticion() {
+    const guardado = leerLocalStorage(LS_KEYS.COMPETICION, null);
+    if (!guardado || !guardado.intentos) {
+        const porDefecto = JSON.parse(JSON.stringify(MEET_DAY_DEFECTO));
+        porDefecto.pesoCorporal = obtenerPesoAtleta();
+        porDefecto.sexo = obtenerSexoAtleta();
+        return porDefecto;
+    }
+    return guardado;
+}
+
+function guardarDatosCompeticion(datos) {
+    guardarLocalStorage(LS_KEYS.COMPETICION, datos);
+}
+
+function renderizarMeetDay() {
+    const vista = document.getElementById('vista-competicion');
+    if (!vista) return;
+
+    const datos = obtenerDatosCompeticion();
+
+    // Sincronizar inputs de perfil
+    const inputBW = document.getElementById('input-meet-peso-corporal');
+    const selectSexo = document.getElementById('select-meet-sexo');
+    if (inputBW && document.activeElement !== inputBW) {
+        inputBW.value = datos.pesoCorporal || 83.0;
+    }
+    if (selectSexo) {
+        selectSexo.value = datos.sexo || 'M';
+    }
+
+    const movimientos = ['squat', 'bench', 'deadlift'];
+    let mejoresValidos = { squat: 0, bench: 0, deadlift: 0 };
+
+    movimientos.forEach(mov => {
+        const intentos = datos.intentos[mov] || [];
+        let maxValido = 0;
+
+        intentos.forEach((intento, idx) => {
+            const card = document.getElementById(`card-intento-${mov}-${idx}`);
+            if (card) {
+                const inputPeso = card.querySelector('.input-intento-peso');
+                const btnEstado = card.querySelector('.btn-estado-intento');
+                const luces = card.querySelectorAll('.luz-arbitro');
+
+                if (inputPeso && document.activeElement !== inputPeso) {
+                    inputPeso.value = intento.peso || 0;
+                }
+
+                // Resetear clases
+                card.classList.remove('valido', 'nulo');
+                luces.forEach(l => l.classList.remove('valido', 'nulo'));
+                btnEstado.classList.remove('estado-valido', 'estado-nulo', 'estado-pendiente');
+
+                if (intento.estado === 'valido') {
+                    card.classList.add('valido');
+                    luces.forEach(l => l.classList.add('valido'));
+                    btnEstado.classList.add('estado-valido');
+                    btnEstado.textContent = '3 BLANCAS (VÁLIDO)';
+                    if (intento.peso > maxValido) {
+                        maxValido = intento.peso;
+                    }
+                } else if (intento.estado === 'nulo') {
+                    card.classList.add('nulo');
+                    luces.forEach(l => l.classList.add('nulo'));
+                    btnEstado.classList.add('estado-nulo');
+                    btnEstado.textContent = 'NULO';
+                } else {
+                    btnEstado.classList.add('estado-pendiente');
+                    btnEstado.textContent = 'PENDIENTE';
+                }
+            }
+        });
+
+        mejoresValidos[mov] = maxValido;
+
+        // Actualizar MEJOR en cabecera del movimiento
+        const elMejor = document.getElementById(`meet-mejor-${mov}`);
+        if (elMejor) {
+            elMejor.textContent = `MEJOR: ${maxValido > 0 ? maxValido.toFixed(1) : '0.0'} KG`;
+        }
+    });
+
+    // Totales y subtotales
+    const totalOficial = mejoresValidos.squat + mejoresValidos.bench + mejoresValidos.deadlift;
+    const elTotal = document.getElementById('meet-total-oficial');
+    const elSubSQ = document.getElementById('meet-subtotal-squat');
+    const elSubBP = document.getElementById('meet-subtotal-bench');
+    const elSubDL = document.getElementById('meet-subtotal-deadlift');
+
+    if (elTotal) {
+        elTotal.innerHTML = `${totalOficial > 0 ? totalOficial.toFixed(1) : '0.0'} <span class="metrica-unidad">KG</span>`;
+    }
+    if (elSubSQ) elSubSQ.textContent = mejoresValidos.squat;
+    if (elSubBP) elSubBP.textContent = mejoresValidos.bench;
+    if (elSubDL) elSubDL.textContent = mejoresValidos.deadlift;
+
+    // IPF GL & DOTS
+    const bw = parseFloat(datos.pesoCorporal) || 83.0;
+    const sexo = datos.sexo || 'M';
+    const elIpf = document.getElementById('meet-puntos-ipf');
+    const elDots = document.getElementById('meet-puntos-dots');
+
+    if (totalOficial > 0 && bw > 0) {
+        const ipf = calcularPuntosIPFGL(totalOficial, bw, sexo);
+        const dots = calcularPuntosDOTS(totalOficial, bw, sexo);
+        if (elIpf) elIpf.textContent = ipf > 0 ? (Math.round(ipf * 100) / 100).toFixed(2) : '--';
+        if (elDots) elDots.textContent = dots > 0 ? (Math.round(dots * 100) / 100).toFixed(2) : '--';
+    } else {
+        if (elIpf) elIpf.textContent = '--';
+        if (elDots) elDots.textContent = '--';
+    }
+}
+
+function alternarEstadoIntento(mov, intentoIndex) {
+    const datos = obtenerDatosCompeticion();
+    if (!datos.intentos[mov] || !datos.intentos[mov][intentoIndex]) return;
+
+    const actual = datos.intentos[mov][intentoIndex].estado;
+    let nuevoEstado = 'pendiente';
+    if (actual === 'pendiente') {
+        nuevoEstado = 'valido';
+    } else if (actual === 'valido') {
+        nuevoEstado = 'nulo';
+    } else {
+        nuevoEstado = 'pendiente';
+    }
+
+    datos.intentos[mov][intentoIndex].estado = nuevoEstado;
+    guardarDatosCompeticion(datos);
+    renderizarMeetDay();
+}
+
+function precargarIntentosMeetDesde1RM() {
+    const marcas = obtenerMarcas1RM();
+    const datos = obtenerDatosCompeticion();
+
+    const basicos = ['squat', 'bench', 'deadlift'];
+    let cargados = 0;
+
+    basicos.forEach(mov => {
+        const rm = Math.max(marcas[mov]?.pr || 0, marcas[mov]?.e1rm || 0);
+        if (rm > 0) {
+            cargados++;
+            // 1º Intento: 91%
+            const p1 = Math.max(20, Math.round((rm * 0.91) / 2.5) * 2.5);
+            // 2º Intento: 96%
+            const p2 = Math.max(20, Math.round((rm * 0.96) / 2.5) * 2.5);
+            // 3º Intento: 100%
+            const p3 = Math.max(20, Math.round(rm / 2.5) * 2.5);
+
+            datos.intentos[mov] = [
+                { peso: p1, estado: 'pendiente' },
+                { peso: p2, estado: 'pendiente' },
+                { peso: p3, estado: 'pendiente' }
+            ];
+        }
+    });
+
+    if (cargados === 0) {
+        mostrarToast('SIN MARCAS DE 1RM PARA CARGAR');
+        return;
+    }
+
+    guardarDatosCompeticion(datos);
+    renderizarMeetDay();
+    mostrarToast('INTENTOS PROYECTADOS DESDE 1RM');
+}
+
+function resetearCompeticion() {
+    mostrarConfirmacion('¿Deseas reiniciar todos los intentos de competición a 0 kg?', () => {
+        const datos = JSON.parse(JSON.stringify(MEET_DAY_DEFECTO));
+        datos.pesoCorporal = obtenerPesoAtleta();
+        datos.sexo = obtenerSexoAtleta();
+        guardarDatosCompeticion(datos);
+        renderizarMeetDay();
+        mostrarToast('TARIMA REINICIADA');
+    }, 'REINICIAR');
+}
+
+let _competicionInicializada = false;
+function inicializarCompeticion() {
+    if (_competicionInicializada) return;
+    _competicionInicializada = true;
+
+    const vista = document.getElementById('vista-competicion');
+    if (!vista) return;
+
+    // 1. Acciones de cabecera
+    const btnCargar1RM = document.getElementById('btn-meet-cargar-1rm');
+    const btnReset = document.getElementById('btn-meet-resetear');
+    if (btnCargar1RM) btnCargar1RM.addEventListener('click', precargarIntentosMeetDesde1RM);
+    if (btnReset) btnReset.addEventListener('click', resetearCompeticion);
+
+    // 2. Perfil atleta (BW y Sexo)
+    const inputBW = document.getElementById('input-meet-peso-corporal');
+    const selectSexo = document.getElementById('select-meet-sexo');
+
+    if (inputBW) {
+        inputBW.addEventListener('input', () => {
+            const val = parseFloat(inputBW.value);
+            if (!isNaN(val) && val > 0) {
+                const datos = obtenerDatosCompeticion();
+                datos.pesoCorporal = val;
+                guardarDatosCompeticion(datos);
+                guardarPesoAtleta(val);
+                renderizarMeetDay();
+            }
+        });
+    }
+
+    if (selectSexo) {
+        selectSexo.addEventListener('change', () => {
+            const val = selectSexo.value;
+            const datos = obtenerDatosCompeticion();
+            datos.sexo = val;
+            guardarDatosCompeticion(datos);
+            guardarSexoAtleta(val);
+            renderizarMeetDay();
+        });
+    }
+
+    // 3. Delegación de eventos en las tarjetas de intentos
+    vista.addEventListener('click', (e) => {
+        // Botón estado de intento (ciclo pendiente -> válido -> nulo)
+        const btnEstado = e.target.closest('.btn-estado-intento');
+        if (btnEstado) {
+            const mov = btnEstado.dataset.mov;
+            const idx = parseInt(btnEstado.dataset.intento, 10);
+            if (mov && !isNaN(idx)) {
+                alternarEstadoIntento(mov, idx);
+            }
+            return;
+        }
+
+        // Stepper botones +/-
+        const btnStep = e.target.closest('.btn-meet-step');
+        if (btnStep) {
+            const mov = btnStep.dataset.mov;
+            const idx = parseInt(btnStep.dataset.intento, 10);
+            const delta = parseFloat(btnStep.dataset.delta) || 2.5;
+
+            const datos = obtenerDatosCompeticion();
+            if (datos.intentos[mov] && datos.intentos[mov][idx]) {
+                const actual = parseFloat(datos.intentos[mov][idx].peso) || 0;
+                const nuevo = Math.max(0, Math.round((actual + delta) * 10) / 10);
+                datos.intentos[mov][idx].peso = nuevo;
+                guardarDatosCompeticion(datos);
+                renderizarMeetDay();
+            }
+            return;
+        }
+    });
+
+    // 4. Input manual de peso en intento
+    vista.addEventListener('input', (e) => {
+        if (e.target.classList.contains('input-intento-peso')) {
+            const mov = e.target.dataset.mov;
+            const idx = parseInt(e.target.dataset.intento, 10);
+            const valor = parseFloat(e.target.value) || 0;
+
+            const datos = obtenerDatosCompeticion();
+            if (datos.intentos[mov] && datos.intentos[mov][idx]) {
+                datos.intentos[mov][idx].peso = valor;
+                guardarDatosCompeticion(datos);
+                renderizarMeetDay();
+            }
+        }
+    });
+}
+
+// ============================================================
+// 16. MÓDULO EVOLUCIÓN Y TENDENCIA DE FUERZA (SPARKLINES SVG)
+// ============================================================
+
+let movimientoGraficaActivo = 'squat';
+
+function renderizarGraficaEvolucion(movimiento = null) {
+    if (movimiento) {
+        movimientoGraficaActivo = movimiento;
+    }
+    const mov = movimientoGraficaActivo;
+    const contenedor = document.getElementById('svg-sparkline-contenedor');
+    if (!contenedor) return;
+
+    const historial = obtenerHistorial();
+    // Ordenar cronológicamente
+    const historialCronologico = [...historial].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+    // Extraer puntos (fecha, e1rm máximo de la sesión en el movimiento)
+    const puntos = [];
+
+    historialCronologico.forEach(sesion => {
+        const fecha = sesion.fecha || new Date().toISOString();
+        let maxE1RMEnSesion = 0;
+
+        (sesion.ejercicios || []).forEach(ej => {
+            let tipo = obtenerTipo1RM(ej.categoria);
+            if (!tipo && ej.ejercicioId) {
+                const info = buscarEjercicioPorId(ej.ejercicioId);
+                if (info) tipo = obtenerTipo1RM(info.categoria);
+            }
+            if (tipo !== mov) return;
+
+            (ej.series || []).forEach(serie => {
+                if (!serie.completada) return;
+                const p = parseFloat(serie.peso) || 0;
+                const r = parseInt(serie.reps, 10) || 0;
+                const rpe = parseFloat(serie.rpe) || 10;
+                if (p > 0 && r > 0) {
+                    const e1rm = calcularE1RM(p, r, rpe);
+                    if (e1rm > maxE1RMEnSesion) maxE1RMEnSesion = e1rm;
+                }
+            });
+        });
+
+        if (maxE1RMEnSesion > 0) {
+            const fechaObj = formatearFecha(fecha);
+            puntos.push({
+                fecha: fecha,
+                fechaCorta: `${fechaObj.dia} ${fechaObj.mes}`,
+                e1rm: maxE1RMEnSesion
+            });
+        }
+    });
+
+    if (puntos.length === 0) {
+        contenedor.innerHTML = `
+            <div class="empty-state-mini">
+                <p>SIN SESIONES REGISTRADAS PARA ESTE BÁSICO</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Geometría del SVG
+    const W = 360;
+    const H = 170;
+    const padLeft = 46;
+    const padRight = 20;
+    const padTop = 32;
+    const padBottom = 28;
+
+    const plotW = W - padLeft - padRight;
+    const plotH = H - padTop - padBottom;
+
+    const valores = puntos.map(p => p.e1rm);
+    let minVal = Math.min(...valores);
+    let maxVal = Math.max(...valores);
+
+    if (minVal === maxVal) {
+        minVal = Math.max(0, minVal - 10);
+        maxVal = maxVal + 10;
+    } else {
+        const delta = maxVal - minVal;
+        minVal = Math.max(0, Math.floor(minVal - delta * 0.1));
+        maxVal = Math.ceil(maxVal + delta * 0.15);
+    }
+
+    // Mapeo de coordenadas
+    const coords = puntos.map((p, idx) => {
+        const x = puntos.length === 1
+            ? padLeft + plotW / 2
+            : padLeft + (idx / (puntos.length - 1)) * plotW;
+        const ratio = (p.e1rm - minVal) / (maxVal - minVal);
+        const y = padTop + plotH - (ratio * plotH);
+        return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, ...p };
+    });
+
+    // Encontrar índice del récord máximo histórico
+    let maxIdx = 0;
+    let maxE1RMVal = coords[0].e1rm;
+    coords.forEach((c, idx) => {
+        if (c.e1rm > maxE1RMVal) {
+            maxE1RMVal = c.e1rm;
+            maxIdx = idx;
+        }
+    });
+    const prPoint = coords[maxIdx];
+
+    // Líneas de referencia horizontal (Grid)
+    const midVal = Math.round((minVal + maxVal) / 2);
+    const yGridMax = padTop;
+    const yGridMid = padTop + plotH / 2;
+    const yGridMin = padTop + plotH;
+
+    // Polyline de la curva
+    const puntosStr = coords.map(c => `${c.x},${c.y}`).join(' ');
+
+    // Área cerrada con gradiente
+    const firstX = coords[0].x;
+    const lastX = coords[coords.length - 1].x;
+    const areaPoints = `${firstX},${yGridMin} ${puntosStr} ${lastX},${yGridMin}`;
+
+    // Círculos de datos
+    const puntosCirculosHtml = coords.map(c => `
+        <circle cx="${c.x}" cy="${c.y}" r="3.5" fill="#111111" stroke="#E50914" stroke-width="2"/>
+    `).join('');
+
+    // Highlight del PR Máximo
+    const prHighlightHtml = `
+        <circle cx="${prPoint.x}" cy="${prPoint.y}" r="7" fill="#E50914" fill-opacity="0.35" stroke="#E50914" stroke-width="1.5"/>
+        <circle cx="${prPoint.x}" cy="${prPoint.y}" r="3.5" fill="#FFFFFF"/>
+        <g transform="translate(${Math.max(38, Math.min(W - 40, prPoint.x))}, ${Math.max(14, prPoint.y - 12)})">
+            <rect x="-30" y="-12" width="60" height="15" rx="2" fill="#0D0D0D" stroke="#E50914" stroke-width="1"/>
+            <text x="0" y="-1" fill="#FFFFFF" font-size="8.5" font-family="'JetBrains Mono', monospace" font-weight="900" text-anchor="middle">PR ${prPoint.e1rm} KG</text>
+        </g>
+    `;
+
+    // Fechas en el eje X
+    const fechaInicio = coords[0].fechaCorta;
+    const fechaFin = coords[coords.length - 1].fechaCorta;
+
+    contenedor.innerHTML = `
+        <svg viewBox="0 0 ${W} ${H}" class="svg-sparkline" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Evolución temporal de e1RM en ${mov}">
+            <defs>
+                <linearGradient id="areaGradienteEvolucion" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#E50914" stop-opacity="0.32"/>
+                    <stop offset="100%" stop-color="#E50914" stop-opacity="0.0"/>
+                </linearGradient>
+            </defs>
+
+            <!-- Líneas de rejilla Y y etiquetas de carga -->
+            <line x1="${padLeft}" y1="${yGridMax}" x2="${W - padRight}" y2="${yGridMax}" stroke="#262626" stroke-width="1" stroke-dasharray="2,2"/>
+            <text x="${padLeft - 6}" y="${yGridMax + 3}" fill="#737373" font-size="8.5" font-family="'JetBrains Mono', monospace" text-anchor="end">${maxVal}</text>
+
+            <line x1="${padLeft}" y1="${yGridMid}" x2="${W - padRight}" y2="${yGridMid}" stroke="#262626" stroke-width="1" stroke-dasharray="2,2"/>
+            <text x="${padLeft - 6}" y="${yGridMid + 3}" fill="#737373" font-size="8.5" font-family="'JetBrains Mono', monospace" text-anchor="end">${midVal}</text>
+
+            <line x1="${padLeft}" y1="${yGridMin}" x2="${W - padRight}" y2="${yGridMin}" stroke="#404040" stroke-width="1"/>
+            <text x="${padLeft - 6}" y="${yGridMin + 3}" fill="#737373" font-size="8.5" font-family="'JetBrains Mono', monospace" text-anchor="end">${minVal}</text>
+
+            <!-- Área sombreada bajo la curva -->
+            <polygon points="${areaPoints}" fill="url(#areaGradienteEvolucion)"/>
+
+            <!-- Curva de tendencia -->
+            <polyline points="${puntosStr}" fill="none" stroke="#E50914" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- Puntos de datos -->
+            ${puntosCirculosHtml}
+
+            <!-- Punto destacado del PR -->
+            ${prHighlightHtml}
+
+            <!-- Eje X: Etiquetas de fechas -->
+            <text x="${padLeft}" y="${H - 10}" fill="#737373" font-size="8.5" font-family="'JetBrains Mono', monospace">${fechaInicio}</text>
+            ${coords.length > 1 ? `<text x="${W - padRight}" y="${H - 10}" fill="#737373" font-size="8.5" font-family="'JetBrains Mono', monospace" text-anchor="end">${fechaFin}</text>` : ''}
+        </svg>
+    `;
+}
+
+let _evolucionInicializada = false;
+function inicializarModuloEvolucion() {
+    if (_evolucionInicializada) return;
+    _evolucionInicializada = true;
+
+    // Toggle colapsable
+    const headerToggle = document.getElementById('btn-toggle-evolucion');
+    const seccionEvolucion = document.querySelector('.seccion-evolucion');
+    if (headerToggle && seccionEvolucion) {
+        headerToggle.addEventListener('click', () => {
+            seccionEvolucion.classList.toggle('colapsada');
+            if (!seccionEvolucion.classList.contains('colapsada')) {
+                renderizarGraficaEvolucion();
+            }
+        });
+    }
+
+    // Filtros de movimiento
+    const contenedorFiltros = document.getElementById('selector-movimiento-grafica');
+    if (contenedorFiltros) {
+        contenedorFiltros.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-filtro-grafica');
+            if (btn && btn.dataset.mov) {
+                contenedorFiltros.querySelectorAll('.btn-filtro-grafica').forEach(b => b.classList.remove('activo'));
+                btn.classList.add('activo');
+                renderizarGraficaEvolucion(btn.dataset.mov);
+            }
+        });
+    }
+
+    renderizarGraficaEvolucion();
+}
+
 /**
  * INICIALIZACIÓN DEFINITIVA Y UNIFICADA (initApp).
  * Se encarga de arrancar todos los módulos de las Partes 1, 2 y 3 sin condiciones de carrera.
@@ -4362,17 +4971,22 @@ async function initApp() {
         inicializarModalEditarSesion();
     }
 
-    // 6. Delegaciones permanentes de eventos dinámicos
+    // 6. Módulos de Tarima (Meet Day) y Evolución de Fuerza (Sparklines)
+    inicializarCompeticion();
+    inicializarModuloEvolucion();
+
+    // 7. Delegaciones permanentes de eventos dinámicos
     inicializarDelegacionRutinasEntrenar();
     inicializarDelegacionRutinasConstructor();
     inicializarDelegacionHistorial();
 
-    // 7. Renderizado inicial de vistas
+    // 8. Renderizado inicial de vistas
     renderizarRutinasEntrenar();
     renderizarRutinasConstructor();
     renderizarHistorial();
+    renderizarMeetDay();
 
-    // 8. Inicializar instalador PWA
+    // 9. Inicializar instalador PWA
     inicializarInstalacionPWA();
 
     console.log('[OK] [QA Engine] Todos los botones y eventos quedaron conectados correctamente.');
