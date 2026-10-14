@@ -10,10 +10,22 @@
 // 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
 // ============================================================
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 
 const NOTAS_DE_PARCHE = [
+    {
+        version: 'v1.4.1',
+        fecha: '14/10/2026',
+        titulo: 'Soporte de Instalación PWA en iOS y Detección Standalone',
+        cambios: [
+            'Instalador PWA interactivo para iPhone y iPad (Apple Safari) con detección automática de dispositivo táctil y modal guiado paso a paso.',
+            'Detección inteligente de modo standalone (pantalla de inicio) mediante CSS media queries y WebKit navigator para ocultar automáticamente el botón si ya está instalada.',
+            'Modal explicativo técnico Industrial Dark con diagramas vectoriales SVG limpios de los pasos "Compartir" y "Añadir a la pantalla de inicio".',
+            'Convivencia segura y sin colisiones entre el evento nativo beforeinstallprompt de Android y el flujo guiado de iOS Safari.',
+            'Actualización de la documentación técnica y del Service Worker (v1.4.1) con purga automática de cachés obsoletas.'
+        ]
+    },
     {
         version: 'v1.4.0',
         fecha: '14/10/2026',
@@ -115,6 +127,10 @@ function renderizarNotasParche() {
  */
 function verificarNuevasVersionesChangelog() {
     const punto = document.getElementById('punto-version-nueva');
+    const badge = document.querySelector('.num-version-badge');
+    if (badge) {
+        badge.textContent = `v${APP_VERSION}`;
+    }
     if (!punto) return;
 
     const versionLeida = localStorage.getItem(STORAGE_VERSION_LEIDA);
@@ -4998,10 +5014,57 @@ async function initApp() {
 
 let eventoInstalacionPWA = null;
 
+/**
+ * Detecta si el dispositivo del usuario es un entorno iOS (iPhone, iPad, iPod)
+ * contemplando también iPads con iPadOS 13+ que envían plataforma MacIntel con pantalla táctil.
+ * @returns {boolean}
+ */
+function esDispositivoIOS() {
+    const ua = window.navigator.userAgent || '';
+    const esIOS = /iPad|iPhone|iPod/.test(ua);
+    const esIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return esIOS || esIPadOS;
+}
+
+/**
+ * Comprueba si la aplicación se está ejecutando en modo standalone (instalada en pantalla de inicio)
+ * comprobando media queries CSS estándar y la propiedad propietaria de WebKit en iOS.
+ * @returns {boolean}
+ */
+function estaEnModoStandalone() {
+    const standaloneMQ = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+    const standaloneNav = window.navigator.standalone === true;
+    return Boolean(standaloneMQ || standaloneNav);
+}
+
+/**
+ * Abre el modal con las instrucciones de instalación paso a paso en Safari para iOS.
+ */
+function abrirModalInstalarIOS() {
+    const modal = document.getElementById('modal-instalar-ios');
+    if (modal) {
+        modal.classList.add('activo');
+    }
+}
+
+/**
+ * Cierra el modal de instrucciones de instalación para iOS.
+ */
+function cerrarModalInstalarIOS() {
+    const modal = document.getElementById('modal-instalar-ios');
+    if (modal) {
+        modal.classList.remove('activo');
+    }
+}
+
 // Capturar el evento beforeinstallprompt de Chrome/Android de inmediato (sin race condition)
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     eventoInstalacionPWA = e;
+
+    // Si ya está en modo standalone, no mostrar el botón
+    if (estaEnModoStandalone()) return;
+
     const btnInstalar = document.getElementById('btn-instalar-app');
     if (btnInstalar) {
         btnInstalar.style.display = 'inline-flex';
@@ -5010,19 +5073,46 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 /**
- * Conecta los listeners del botón de instalación y appinstalled.
+ * Conecta los listeners del botón de instalación, modal de iOS y evento appinstalled.
  */
 function inicializarInstalacionPWA() {
     const btnInstalar = document.getElementById('btn-instalar-app');
+    const btnCerrarModalIOS = document.getElementById('btn-cerrar-modal-ios');
+    const btnCerrarIOSFooter = document.getElementById('btn-cerrar-ios-footer');
+
+    // Conectar eventos de cierre del modal de instalación iOS
+    if (btnCerrarModalIOS) {
+        btnCerrarModalIOS.addEventListener('click', cerrarModalInstalarIOS);
+    }
+    if (btnCerrarIOSFooter) {
+        btnCerrarIOSFooter.addEventListener('click', cerrarModalInstalarIOS);
+    }
+
     if (!btnInstalar) return;
 
-    // Si el evento ya llegó antes de completar initApp, mostrar el botón
-    if (eventoInstalacionPWA) {
+    // Si ya está ejecutándose como aplicación instalada (standalone), ocultar botón
+    if (estaEnModoStandalone()) {
+        btnInstalar.style.display = 'none';
+        return;
+    }
+
+    // Si es dispositivo iOS y no está instalada, mostrar el botón
+    if (esDispositivoIOS()) {
+        btnInstalar.style.display = 'inline-flex';
+    } else if (eventoInstalacionPWA) {
+        // En Android / Chromium si el evento beforeinstallprompt llegó antes de completar initApp
         btnInstalar.style.display = 'inline-flex';
     }
 
     // Click en el botón INSTALAR APP
     btnInstalar.addEventListener('click', async () => {
+        // En iOS Safari: abrir el modal explicativo técnico con los pasos de instalación
+        if (esDispositivoIOS()) {
+            abrirModalInstalarIOS();
+            return;
+        }
+
+        // En Android / Chromium: ejecutar el prompt nativo
         if (!eventoInstalacionPWA) return;
 
         eventoInstalacionPWA.prompt();
@@ -5040,7 +5130,7 @@ function inicializarInstalacionPWA() {
         }
     });
 
-    // Evento appinstalled cuando se finaliza la instalación
+    // Evento appinstalled cuando se finaliza la instalación en navegadores compatibles
     window.addEventListener('appinstalled', () => {
         eventoInstalacionPWA = null;
         btnInstalar.style.display = 'none';

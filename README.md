@@ -56,9 +56,9 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
   - Cálculo instantáneo de **Puntos DOTS** mediante polinomio de 4º grado para comparación normalizada entre categorías de peso.
 
 ### Control de Versiones y Notas de Parche (Changelog)
-- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.4`) con tipografía en números tabulares e icono vectorial.
+- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.4.1`) con tipografía en números tabulares e icono vectorial.
 - Indicador luminoso en rojo carmesí de versión no leída, sincronizado automáticamente contra `localStorage` (`ultimaVersionLeida` vs `APP_VERSION`).
-- Modal técnico de lectura con desglose cronológico de versiones, fechas y cambios detallados (v1.4.0 actual, v1.3.0, v1.2.0, v1.1.0 y v1.0.0 inicial).
+- Modal técnico de lectura con desglose cronológico de versiones, fechas y cambios detallados (v1.4.1 actual, v1.4.0, v1.3.0, v1.2.0, v1.1.0 y v1.0.0 inicial).
 
 ### Operación 100% Offline y Persistencia Local
 - Almacenamiento local persistente sin necesidad de backend o bases de datos remotas mediante `localStorage`.
@@ -98,18 +98,19 @@ PowerApp/
 
 ## 3. Instalación como Aplicación Nativa (PWA)
 
-La aplicación puede ser instalada como una app nativa independiente sin pasar por tiendas comerciales:
+La aplicación puede ser instalada como una app nativa independiente sin pasar por tiendas comerciales, con soporte completo tanto para Android como para iOS:
 
-### En Android (Google Chrome)
+### En Android (Google Chrome / Chromium)
 1. Abrir la URL de la aplicación en el navegador.
-2. Hacer clic en el botón técnico `INSTALAR APP` visible en la cabecera superior, o bien abrir el menú del navegador (tres puntos verticales) y seleccionar **Instalar aplicación**.
-3. Confirmar la instalación para crear el acceso directo en la pantalla de inicio con su icono dedicado.
+2. Hacer clic en el botón técnico `INSTALAR APP` visible en la cabecera superior (activado mediante el evento nativo `beforeinstallprompt`), o bien abrir el menú del navegador (tres puntos verticales) y seleccionar **Instalar aplicación**.
+3. Confirmar la instalación en el diálogo del sistema operativo para crear el acceso directo en la pantalla de inicio con su icono dedicado.
 
-### En iOS / iPhone (Apple Safari)
+### En iOS / iPhone / iPad (Apple Safari)
 1. Abrir la URL de la aplicación en Safari.
-2. Pulsar el botón **Compartir** (icono de cuadrado con flecha hacia arriba) en la barra de navegación inferior.
-3. Desplazarse por las opciones y seleccionar **Añadir a la pantalla de inicio**.
-4. Confirmar el nombre y pulsar **Añadir**. La aplicación se ejecutará a pantalla completa en modo independiente (*standalone*), adaptándose a la Dynamic Island y notch.
+2. Hacer clic en el botón técnico `INSTALAR APP` presente en la cabecera superior, el cual detecta automáticamente el entorno iOS y abre un modal interactivo con instrucciones gráficas paso a paso.
+3. Pulsar el botón **Compartir** (icono de cuadrado con flecha hacia arriba) en la barra de navegación de Safari.
+4. Desplazarse por las opciones del menú y pulsar **Añadir a la pantalla de inicio** (icono con el símbolo `+`).
+5. Confirmar para añadir. Al iniciar desde el icono de inicio, la aplicación se ejecutará a pantalla completa en modo independiente (*standalone*), ocultando automáticamente las barras de navegación de Safari y adaptándose a la Dynamic Island y notch del dispositivo.
 
 ---
 

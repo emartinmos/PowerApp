@@ -3285,6 +3285,117 @@ h1, h2, h3 {
     display: block;
 }
 
+/* ============================================================
+   27. MODAL DE INSTRUCCIONES DE INSTALACIÓN IPHONE (SAFARI / IOS)
+   ============================================================ */
+
+.modal-instalar-ios-contenedor {
+    background-color: #0A0A0A !important;
+    border: 1px solid #262626 !important;
+    max-width: 420px;
+    width: 92%;
+    border-radius: var(--radio-sm);
+}
+
+.modal-instalar-ios-body {
+    padding: 16px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ios-install-aviso {
+    background-color: #111111;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xs);
+    padding: 10px 12px;
+}
+
+.ios-install-tag {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    color: var(--rojo);
+    background-color: var(--rojo-fondo);
+    border: 1px solid var(--rojo-borde);
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-bottom: 6px;
+}
+
+.ios-install-desc {
+    font-size: 0.78rem;
+    color: var(--gris-claro);
+    line-height: 1.4;
+}
+
+.ios-pasos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ios-paso-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #111111;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xs);
+    padding: 12px 14px;
+}
+
+.ios-paso-numero {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 900;
+    color: var(--rojo);
+    flex-shrink: 0;
+}
+
+.ios-paso-icono-wrap {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radio-xs);
+    background-color: var(--carbon);
+    border: 1px solid var(--borde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--blanco);
+    flex-shrink: 0;
+}
+
+.ios-svg-icono {
+    stroke: var(--blanco);
+}
+
+.ios-paso-texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.ios-paso-titulo {
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--blanco);
+    margin-bottom: 2px;
+}
+
+.ios-paso-detalle {
+    font-size: 0.74rem;
+    color: var(--gris-medio);
+    line-height: 1.35;
+}
+
+.ios-paso-detalle strong {
+    color: var(--blanco);
+}
+
+
 
 
 
