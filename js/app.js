@@ -10,8 +10,6 @@
 // 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
 // ============================================================
 
-import { Analytics } from "@vercel/analytics/next"
-
 const APP_VERSION = '1.4.1';
 const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 
