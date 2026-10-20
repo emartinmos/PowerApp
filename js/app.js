@@ -10,10 +10,23 @@
 // 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
 // ============================================================
 
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.5.0';
 const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 
 const NOTAS_DE_PARCHE = [
+    {
+        version: 'v1.5.0',
+        fecha: '20/10/2026',
+        titulo: 'Rediseño Condensado de Series en Tabla Industrial',
+        cambios: [
+            'Vista de series reemplazada en `iniciarEntrenamiento` con tabla condensada de 5 columnas (OBJETIVO, PESO, REPS, RPE, CHECK) optimizada para 393px (iPhone 16).',
+            'Inputs numéricos minimalistas con placeholder `−` y `tabular-nums` para valores numéricos, sin steppers visibles.',
+            'Botón de completado circular con solo SVG (sin texto), estado checked verde automático.',
+            'Cálculo dinámico de 1RME y Tonelaje por ejercicio en footer: 1RME = e1RM máximo (fórmula Epley ajustada por RPE), Tonelaje = Σ (peso × reps).',
+            'Distinción visual por tipo de serie: Top Set (borde y fondo carmesí #E50914), Warm-up (gris oscuro), Back-off (amarillo #EAB308), Plana (gris medio).',
+            'Back-offs automáticos recalculados desde el Top Set al marcar completado o cambiar peso.'
+        ]
+    },
     {
         version: 'v1.4.1',
         fecha: '14/10/2026',
@@ -3269,18 +3282,21 @@ iniciarEntrenamiento = function(rutinaId) {
         const rmVal = tipo1rm ? obtenerRMNumero(marcas1RM, tipo1rm) : 0;
         const texto1RMInicial = rmVal > 0 ? `@ 1RM: ${rmVal} kg` : (tipo1rm ? '--%' : '');
 
-        // Construir tarjetas para cada serie
+        // Construir filas de series en formato tabla condensada
         const seriesHtml = (ejConfig.series || []).map((serie, indexSerie) => {
             const esTopSet = serie.tipo === 'topset';
             const esWarmup = serie.tipo === 'warmup';
             const esPlana = serie.tipo === 'plana';
             const esBackoff = serie.tipo === 'backoff';
-            const claseCard = esTopSet ? 'serie-topset' : (esWarmup ? 'serie-warmup' : (esPlana ? 'serie-plana' : 'serie-backoff'));
+            const claseFila = esTopSet ? 'fila-topset' : (esWarmup ? 'fila-warmup' : (esPlana ? 'fila-plana' : 'fila-backoff'));
             const etiquetaTipo = esTopSet ? 'Top Set' : (esWarmup ? 'Warm-up' : (esPlana ? 'Plana' : 'Back-off'));
 
             const pesoSugerido = obtenerPesoInicialSugerido(ejInfo, serie.tipo, marcas1RM);
             const repsSugeridas = serie.repsObjetivo || (esTopSet ? 3 : (esPlana ? 8 : 5));
             const rpeSugerido = serie.rpeObjetivo || (esTopSet ? 8 : (esPlana ? 8 : 6));
+
+            // OBJETIVO: "peso x reps" (peso sugerido x reps objetivo)
+            const objetivoTexto = `${pesoSugerido} x ${repsSugeridas}`;
 
             const caidaDefecto = (serie.caidaPorcentaje !== undefined) ? serie.caidaPorcentaje : -10;
             const selectorBackoffHtml = esBackoff ? `
@@ -3296,62 +3312,40 @@ iniciarEntrenamiento = function(rutinaId) {
             ` : '';
 
             return `
-                <div class="serie-card ${claseCard}" data-ej-index="${indexEj}" data-serie-index="${indexSerie}" data-tipo="${serie.tipo}">
-                    <div class="serie-header">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="serie-tipo">${etiquetaTipo}</span>
-                            <span class="serie-numero">Serie ${indexSerie + 1}</span>
-                            ${selectorBackoffHtml}
-                        </div>
-                        <button type="button" class="btn-toggle-nota" aria-label="Notas y sensaciones de la serie" title="Añadir notas técnicas">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                            </svg>
-                            <span>NOTA</span>
+                <div class="serie-fila ${claseFila}" data-ej-index="${indexEj}" data-serie-index="${indexSerie}" data-tipo="${serie.tipo}">
+                    <div class="celda objetivo" data-label="OBJETIVO">
+                        <span class="objetivo-texto">${objetivoTexto}</span>
+                        ${selectorBackoffHtml}
+                    </div>
+                    <div class="celda peso" data-label="PESO">
+                        <input type="number" class="input-peso" value="${pesoSugerido}" step="2.5" min="0" inputmode="decimal" placeholder="−" aria-label="Peso en kg">
+                    </div>
+                    <div class="celda reps" data-label="REPS">
+                        <input type="number" class="input-reps" value="${repsSugeridas}" step="1" min="1" max="50" inputmode="numeric" placeholder="−" aria-label="Repeticiones">
+                    </div>
+                    <div class="celda rpe" data-label="RPE">
+                        <input type="number" class="input-rpe" value="${rpeSugerido}" step="0.5" min="5" max="10" inputmode="decimal" placeholder="−" aria-label="RPE">
+                    </div>
+                    <div class="celda check" data-label="">
+                        <button type="button" class="btn-check" aria-label="Completar serie">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </button>
                     </div>
-                    <div class="serie-badges-resumen oculto"></div>
-                    <div class="serie-inputs">
-                        <div class="campo-grupo">
-                            <label>Peso (kg)</label>
-                            <div class="stepper">
-                                <button type="button" class="stepper-btn stepper-menos" data-step="-2.5">−</button>
-                                <input type="number" class="input-peso" value="${pesoSugerido}" step="2.5" min="0" inputmode="decimal">
-                                <button type="button" class="stepper-btn stepper-mas" data-step="2.5">+</button>
-                            </div>
-                        </div>
-                        <div class="campo-grupo">
-                            <label>Reps</label>
-                            <div class="stepper">
-                                <button type="button" class="stepper-btn stepper-menos" data-step="-1">−</button>
-                                <input type="number" class="input-reps" value="${repsSugeridas}" step="1" min="1" max="50" inputmode="numeric">
-                                <button type="button" class="stepper-btn stepper-mas" data-step="1">+</button>
-                            </div>
-                        </div>
-                        <div class="campo-grupo">
-                            <label>RPE</label>
-                            <div class="stepper stepper-rpe">
-                                <button type="button" class="stepper-btn stepper-menos" data-step="-0.5">−</button>
-                                <input type="number" class="input-rpe" value="${rpeSugerido}" step="0.5" min="5" max="10" inputmode="decimal">
-                                <button type="button" class="stepper-btn stepper-mas" data-step="0.5">+</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="serie-panel-nota oculto">
-                        <div class="chips-tags-tecnicos">
-                            ${CHIPS_TECNICOS_DISPONIBLES.map(chip => `
-                                <button type="button" class="chip-tag" data-tag="${chip}">${chip}</button>
-                            `).join('')}
-                        </div>
-                        <div class="campo-micro-nota">
-                            <input type="text" class="input-micro-nota" maxlength="60" placeholder="Sensaciones técnicas (máx. 60 caracteres)...">
-                        </div>
-                    </div>
-                    <button type="button" class="btn-check" aria-label="Completar serie"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETAR</button>
                 </div>
             `;
         }).join('');
+
+        // Calcular 1RME y Tonelaje del ejercicio para el footer
+        const seriesCompletadasEjercicio = (ejConfig.series || []).filter((s, idx) => {
+            // Se calculará dinámicamente en el DOM, aquí solo preparamos el contenedor
+            return false;
+        });
+        const footerHtml = `
+            <div class="ejercicio-footer">
+                <span class="metrica-1rme" data-ej-index="${indexEj}">1RME <span class="valor">−</span></span>
+                <span class="metrica-tonelaje" data-ej-index="${indexEj}">Tonelaje <span class="valor">0</span></span>
+            </div>
+        `;
 
         return `
             <div class="bloque-ejercicio" data-ej-id="${ejInfo.id}" data-categoria="${ejInfo.categoria}">
@@ -3360,8 +3354,16 @@ iniciarEntrenamiento = function(rutinaId) {
                     <span class="ejercicio-porcentaje">${texto1RMInicial}</span>
                 </div>
                 <div class="series-lista">
+                    <div class="series-cabecera">
+                        <div>OBJETIVO</div>
+                        <div>PESO</div>
+                        <div>REPS</div>
+                        <div>RPE</div>
+                        <div></div>
+                    </div>
                     ${seriesHtml}
                 </div>
+                ${footerHtml}
             </div>
         `;
     }).join('');
@@ -3375,6 +3377,53 @@ iniciarEntrenamiento = function(rutinaId) {
     navegarA('vista-entrenamiento');
     mostrarToast('SESIÓN INICIADA');
 };
+
+/**
+ * Calcula y actualiza el footer del ejercicio con 1RME y Tonelaje
+ * basado en las series completadas del bloque.
+ */
+function actualizarFooterEjercicio(bloque) {
+    if (!bloque) return;
+
+    const filas = bloque.querySelectorAll('.serie-fila');
+    let max1RME = 0;
+    let tonelajeTotal = 0;
+
+    filas.forEach(fila => {
+        const completada = fila.classList.contains('completada');
+        const peso = parseFloat(fila.querySelector('.input-peso')?.value) || 0;
+        const reps = parseInt(fila.querySelector('.input-reps')?.value, 10) || 0;
+        const rpe = parseFloat(fila.querySelector('.input-rpe')?.value) || 0;
+
+        if (completada && peso > 0 && reps > 0) {
+            // Calcular 1RM estimado (Epley) ajustado por RPE si está disponible
+            let e1rm = peso * (1 + reps / 30);
+
+            // Ajuste por RPE (basado en tabla RPE-RIR)
+            if (rpe >= 5 && rpe <= 10) {
+                const rir = 10 - rpe;
+                // Fórmula de ajuste aproximada: e1rm / (1 + rir/30)
+                // o usar tabla estándar: 100% = RPE10, 97.5% = RPE9.5, 95% = RPE9, etc.
+                const rpeFactor = 1 - (rir * 0.025); // 2.5% por RIR
+                e1rm = e1rm * rpeFactor;
+            }
+
+            if (e1rm > max1RME) max1RME = e1rm;
+            tonelajeTotal += (peso * reps);
+        }
+    });
+
+    // Actualizar elementos del footer
+    const metrica1RME = bloque.querySelector('.metrica-1rme .valor');
+    const metricaTonelaje = bloque.querySelector('.metrica-tonelaje .valor');
+
+    if (metrica1RME) {
+        metrica1RME.textContent = max1RME > 0 ? Math.round(max1RME) : '−';
+    }
+    if (metricaTonelaje) {
+        metricaTonelaje.textContent = tonelajeTotal > 0 ? tonelajeTotal.toFixed(1).replace('.', ',') : '0';
+    }
+}
 
 // ------------------------------------------------------------
 // C. DELEGACIÓN DE EVENTOS EN EL ENTRENAMIENTO ACTIVO
@@ -3391,20 +3440,20 @@ function inicializarEventosEntrenamientoActivo() {
     // Función para calcular e inyectar automáticamente la carga en Back-offs desde el Top Set
     function actualizarCargasBackoffsDesdeTopSet(bloque) {
         if (!bloque) return;
-        const cardTop = bloque.querySelector('.serie-card[data-tipo="topset"]');
-        if (!cardTop) return;
-        const pesoTop = parseFloat(cardTop.querySelector('.input-peso')?.value) || 0;
+        const filaTop = bloque.querySelector('.serie-fila[data-tipo="topset"]');
+        if (!filaTop) return;
+        const pesoTop = parseFloat(filaTop.querySelector('.input-peso')?.value) || 0;
         if (pesoTop <= 0) return;
 
-        const cardsBackoff = bloque.querySelectorAll('.serie-card[data-tipo="backoff"]');
+        const filasBackoff = bloque.querySelectorAll('.serie-fila[data-tipo="backoff"]');
         let actualizados = 0;
-        cardsBackoff.forEach(card => {
-            const selectCaida = card.querySelector('.select-caida-backoff');
+        filasBackoff.forEach(fila => {
+            const selectCaida = fila.querySelector('.select-caida-backoff');
             const caida = selectCaida ? parseFloat(selectCaida.value) : -10;
             if (caida !== 0) {
                 const factor = 1 + (caida / 100);
                 const pesoCalc = Math.max(20, Math.round((pesoTop * factor) / 2.5) * 2.5);
-                const inputPeso = card.querySelector('.input-peso');
+                const inputPeso = fila.querySelector('.input-peso');
                 if (inputPeso && parseFloat(inputPeso.value) !== pesoCalc) {
                     inputPeso.value = pesoCalc;
                     inputPeso.classList.remove('peso-auto-actualizado');
@@ -3419,23 +3468,27 @@ function inicializarEventosEntrenamientoActivo() {
         }
     }
 
-    // 1. Escuchar cambios de peso para actualizar el % 1RM en vivo, notas y back-offs
+    // 1. Escuchar cambios de peso/REPS/RPE para actualizar % 1RM, back-offs y footer
     contenedor.addEventListener('input', (e) => {
         if (e.target.classList.contains('input-peso')) {
             const bloque = e.target.closest('.bloque-ejercicio');
-            const card = e.target.closest('.serie-card');
+            const fila = e.target.closest('.serie-fila');
             if (bloque) {
                 const cat = bloque.dataset.categoria;
                 const marcas = obtenerMarcas1RM();
                 actualizarPorcentajeBloque(bloque, cat, marcas);
-                if (card && card.dataset.tipo === 'topset') {
+                if (fila && fila.dataset.tipo === 'topset') {
                     actualizarCargasBackoffsDesdeTopSet(bloque);
                 }
             }
-        } else if (e.target.classList.contains('input-micro-nota')) {
-            const card = e.target.closest('.serie-card');
-            if (card) {
-                actualizarBadgesResumenSerie(card);
+            // Actualizar footer del ejercicio (1RME y Tonelaje) en cada cambio
+            if (bloque) {
+                actualizarFooterEjercicio(bloque);
+            }
+        } else if (e.target.classList.contains('input-reps') || e.target.classList.contains('input-rpe')) {
+            const bloque = e.target.closest('.bloque-ejercicio');
+            if (bloque) {
+                actualizarFooterEjercicio(bloque);
             }
         }
     });
@@ -3448,60 +3501,31 @@ function inicializarEventosEntrenamientoActivo() {
         }
     });
 
-    // 2. Click en botón "Check", panel de notas o chips técnicos
+    // 2. Click en botón "Check"
     contenedor.addEventListener('click', (e) => {
-        // Toggle de panel de micro-notas
-        const btnToggleNota = e.target.closest('.btn-toggle-nota');
-        if (btnToggleNota) {
-            const card = btnToggleNota.closest('.serie-card');
-            if (card) {
-                const panel = card.querySelector('.serie-panel-nota');
-                if (panel) {
-                    panel.classList.toggle('oculto');
-                    btnToggleNota.classList.toggle('activo', !panel.classList.contains('oculto'));
-                    if (!panel.classList.contains('oculto')) {
-                        const inputNota = panel.querySelector('.input-micro-nota');
-                        if (inputNota) inputNota.focus();
-                    }
-                }
-            }
-            return;
-        }
-
-        // Selección de chips de etiquetas técnicas
-        const btnChip = e.target.closest('.chip-tag');
-        if (btnChip) {
-            const card = btnChip.closest('.serie-card');
-            if (card) {
-                btnChip.classList.toggle('activo');
-                actualizarBadgesResumenSerie(card);
-            }
-            return;
-        }
-
         const btnCheck = e.target.closest('.btn-check');
         if (!btnCheck) return;
 
-        const card = btnCheck.closest('.serie-card');
-        if (!card) return;
+        const fila = btnCheck.closest('.serie-fila');
+        if (!fila) return;
 
-        const estaCompletada = card.classList.contains('completada');
+        const estaCompletada = fila.classList.contains('completada');
 
         if (!estaCompletada) {
             // Marcar completada
-            card.classList.add('completada');
+            fila.classList.add('completada');
             btnCheck.classList.add('checked');
-            btnCheck.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETADA';
+            btnCheck.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
             // Si es un Top Set, recalcular e inyectar Back-offs automáticamente
-            if (card.dataset.tipo === 'topset') {
-                const bloque = card.closest('.bloque-ejercicio');
+            if (fila.dataset.tipo === 'topset') {
+                const bloque = fila.closest('.bloque-ejercicio');
                 actualizarCargasBackoffsDesdeTopSet(bloque);
             }
 
             // Comprobar si todas las series del entrenamiento están completadas
-            const todasLasSeries = contenedor.querySelectorAll('.serie-card');
-            const completadas = contenedor.querySelectorAll('.serie-card.completada');
+            const todasLasSeries = contenedor.querySelectorAll('.serie-fila');
+            const completadas = contenedor.querySelectorAll('.serie-fila.completada');
 
             if (todasLasSeries.length === completadas.length) {
                 mostrarToast('TODAS LAS SERIES COMPLETADAS');
@@ -3510,9 +3534,9 @@ function inicializarEventosEntrenamientoActivo() {
             }
         } else {
             // Desmarcar si el usuario pulsó por error
-            card.classList.remove('completada');
+            fila.classList.remove('completada');
             btnCheck.classList.remove('checked');
-            btnCheck.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> COMPLETAR';
+            btnCheck.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         }
     });
 
@@ -3588,23 +3612,23 @@ function finalizarEntrenamiento() {
     bloques.forEach(bloque => {
         const ejId = bloque.dataset.ejId;
         const ejInfo = buscarEjercicioPorId(ejId);
-        const seriesCards = bloque.querySelectorAll('.serie-card');
+        const seriesFilas = bloque.querySelectorAll('.serie-fila');
         const seriesData = [];
 
-        seriesCards.forEach(card => {
-            const inputPeso = card.querySelector('.input-peso');
-            const inputReps = card.querySelector('.input-reps');
-            const inputRpe = card.querySelector('.input-rpe');
+        seriesFilas.forEach(fila => {
+            const inputPeso = fila.querySelector('.input-peso');
+            const inputReps = fila.querySelector('.input-reps');
+            const inputRpe = fila.querySelector('.input-rpe');
 
             const peso = parseFloat(inputPeso?.value) || 0;
             const reps = parseInt(inputReps?.value, 10) || 0;
             const rpe = parseFloat(inputRpe?.value) || 0;
-            const completada = card.classList.contains('completada');
-            const tipo = card.dataset.tipo || 'warmup';
+            const completada = fila.classList.contains('completada');
+            const tipo = fila.dataset.tipo || 'warmup';
 
-            const tags = Array.from(card.querySelectorAll('.chip-tag.activo')).map(c => c.dataset.tag || c.textContent.trim());
-            const inputNota = card.querySelector('.input-micro-nota');
-            const nota = inputNota ? inputNota.value.trim() : '';
+            // Tags y notas ya no existen en la nueva vista condensada
+            const tags = [];
+            const nota = '';
 
             if (completada) {
                 totalSeriesCompletadas++;

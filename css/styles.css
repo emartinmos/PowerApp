@@ -843,187 +843,253 @@ h1, h2, h3 {
     flex-shrink: 0;
 }
 
+/* ===== TABLA CONDENSADA DE SERIES (Diseño Industrial Compacto) ===== */
 .series-lista {
     padding: var(--espacio-md) !important;
     display: flex;
     flex-direction: column;
-    gap: 12px !important;
+    gap: 0 !important;
 }
 
-/* Fila de Serie (Diseño Compacto Industrial con Aire Interno) */
-.serie-card {
-    display: flex;
-    flex-direction: column;
+/* Cabecera de la tabla de series */
+.series-cabecera {
+    display: grid;
+    grid-template-columns: 1fr 80px 60px 60px 48px;
+    gap: 8px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--borde);
+    font-size: 0.62rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gris-medio);
+    font-family: var(--font-mono);
+}
+
+.series-cabecera > div {
+    text-align: center;
+}
+
+.series-cabecera > div:first-child {
+    text-align: left;
+    padding-left: 4px;
+}
+
+/* Fila de Serie - Tabla Condensada */
+.serie-fila {
+    display: grid;
+    grid-template-columns: 1fr 80px 60px 60px 48px;
+    gap: 8px;
+    align-items: center;
     background-color: var(--superficie);
-    border: 1px solid var(--borde);
-    border-radius: var(--radio-sm);
-    padding: 14px var(--espacio-md) !important;
-    border-left: 3px solid var(--borde-fuerte);
+    border-bottom: 1px solid var(--borde);
+    padding: 10px 4px;
     position: relative;
     width: 100% !important;
     box-sizing: border-box !important;
-    gap: 10px;
+    transition: background-color 100ms ease;
 }
 
-/* Serie Calentamiento (Warm-up) */
-.serie-warmup {
-    border-left-color: var(--gris-oscuro);
-}
-.serie-warmup .serie-tipo {
-    color: var(--gris-medio);
-    background-color: var(--carbon);
-    border: 1px solid var(--borde);
+.serie-fila:last-of-type {
+    border-bottom: none;
 }
 
-/* Serie Pico (Top Set: Acento Carmesí Técnico) */
-.serie-topset {
-    border-left-color: var(--rojo) !important;
-    background-color: var(--rojo-fondo);
-    border-top-color: var(--rojo-borde);
-    border-right-color: var(--rojo-borde);
-    border-bottom-color: var(--rojo-borde);
-}
-.serie-topset .serie-tipo {
-    color: var(--rojo);
-    background-color: rgba(229, 9, 20, 0.15);
-    border: 1px solid var(--rojo-borde);
-    font-weight: 800;
-}
-
-/* Serie Bajada (Back-off Sets) */
-.serie-backoff {
-    border-left-color: var(--amarillo);
-}
-.serie-backoff .serie-tipo {
-    color: var(--amarillo);
-    background-color: var(--amarillo-fondo);
-    border: 1px solid rgba(234, 179, 8, 0.3);
-}
-
-/* Serie Plana / Estándar (Color estándar neutral) */
-.serie-plana {
-    border-left-color: #555555 !important;
-    background-color: var(--superficie) !important;
-    border-top-color: var(--borde) !important;
-    border-right-color: var(--borde) !important;
-    border-bottom-color: var(--borde) !important;
-}
-.serie-plana .serie-tipo {
-    color: var(--blanco) !important;
-    background-color: var(--carbon) !important;
-    border: 1px solid #444444 !important;
-    font-weight: 700;
-}
-
-/* Serie Completada */
-.serie-card.completada {
-    opacity: 0.65;
-    border-left-color: var(--verde) !important;
-}
-
-.serie-header {
+/* Celdas */
+.celda {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    min-width: 0;
 }
 
-.serie-tipo {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: var(--radio-xs);
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-family: var(--font-mono);
+.celda.objetivo {
+    justify-content: flex-start;
+    padding-left: 4px;
+    min-width: 0;
 }
 
-.serie-numero {
+.celda.check {
+    justify-content: center;
+}
+
+/* Columna OBJETIVO */
+.objetivo-texto {
     font-size: 0.72rem;
+    font-weight: 900;
     font-family: var(--font-mono);
-    color: var(--gris-medio);
-    text-transform: uppercase;
-    font-weight: 800;
+    color: var(--rojo);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
-/* Fila de Steppers de 3 Columnas perfectamente acoplados a 393px */
-.serie-inputs {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-    width: 100% !important;
+/* Selector de caída backoff dentro de objetivo */
+.selector-caida-backoff-wrap {
+    margin-top: 4px;
 }
 
-.campo-grupo {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    min-width: 0 !important;
-    width: 100% !important;
-    gap: 4px;
+.select-caida-backoff {
+    font-size: 0.62rem;
+    font-family: var(--font-mono);
+    padding: 2px 6px;
+    border-radius: var(--radio-xs);
+    background-color: var(--carbon);
+    border: 1px solid var(--borde);
+    color: var(--blanco);
+    width: auto;
 }
 
-.campo-grupo label {
-    font-size: 0.68rem !important;
-    font-weight: 800 !important;
-    color: var(--gris-medio) !important;
-    text-align: center !important;
-    margin-bottom: 2px;
-    white-space: nowrap !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
+/* Inputs minimalistas */
+.serie-fila input[type="number"] {
+    width: 100%;
+    height: 36px;
+    font-size: 16px; /* Anti-zoom iOS */
+    font-weight: 900;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    background-color: var(--carbon);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xs);
+    color: var(--blanco);
+    padding: 0 8px;
+    -moz-appearance: textfield;
 }
 
-.campo-grupo .stepper {
-    width: 100% !important;
-    height: 42px !important;
-    border-radius: var(--radio-sm);
+.serie-fila input[type="number"]::-webkit-outer-spin-button,
+.serie-fila input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
-.campo-grupo .stepper-btn {
-    width: 28px !important;
-    min-width: 28px !important;
-    max-width: 28px !important;
-    height: 100% !important;
-    font-size: 1.25rem !important;
+.serie-fila input[type="number"]:focus {
+    outline: none;
+    border-color: var(--rojo);
     background-color: var(--superficie);
-    border: none;
 }
 
-.campo-grupo .stepper input {
-    font-size: 16px !important; /* Anti-zoom */
-    font-weight: 900 !important;
-    padding: 0 2px !important;
+.serie-fila input[type="number"]::placeholder {
+    color: var(--gris-oscuro);
+    font-weight: 400;
 }
 
-/* Botón de Check Técnico */
+/* Botón Check minimalista (solo SVG) */
 .btn-check {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    width: 100%;
-    min-height: 44px;
-    border-radius: var(--radio-sm);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     background-color: var(--carbon);
-    border: 1px solid var(--borde);
-    color: var(--gris-claro);
-    font-size: 0.8rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    border: 2px solid var(--borde);
+    color: var(--gris-medio);
     transition: all 120ms ease;
-    margin-top: 4px;
+    padding: 0;
 }
 
+.btn-check:hover,
 .btn-check:active {
-    background-color: var(--superficie-elevada);
+    background-color: var(--superficie);
+    border-color: var(--borde-fuerte);
+}
+
+.btn-check:focus-visible {
+    outline: none;
+    border-color: var(--rojo);
+    box-shadow: 0 0 0 2px var(--rojo-fondo);
 }
 
 .btn-check.checked {
-    background-color: var(--verde-fondo);
-    border-color: var(--verde-borde);
-    color: var(--verde);
+    background-color: var(--verde);
+    border-color: var(--verde);
+    color: var(--carbon);
+}
+
+.btn-check.checked svg {
+    stroke: var(--carbon);
+}
+
+/* Variantes de fila por tipo de serie */
+.fila-topset {
+    background-color: var(--rojo-fondo);
+    border-left: 3px solid var(--rojo);
+}
+.fila-topset .objetivo-texto {
+    color: var(--rojo);
+}
+
+.fila-warmup {
+    background-color: var(--superficie);
+    border-left: 3px solid var(--gris-oscuro);
+}
+.fila-warmup .objetivo-texto {
+    color: var(--gris-medio);
+}
+
+.fila-backoff {
+    background-color: var(--amarillo-fondo);
+    border-left: 3px solid var(--amarillo);
+}
+.fila-backoff .objetivo-texto {
+    color: var(--amarillo);
+}
+
+.fila-plana {
+    background-color: var(--superficie);
+    border-left: 3px solid #555555;
+}
+.fila-plana .objetivo-texto {
+    color: var(--blanco);
+}
+
+/* Fila Completada */
+.serie-fila.completada {
+    opacity: 0.55;
+}
+.serie-fila.completada .celda {
+    filter: grayscale(0.3);
+}
+
+/* Footer del Ejercicio: 1RME y Tonelaje */
+.ejercicio-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px var(--espacio-md);
+    background-color: var(--carbon);
+    border-top: 1px solid var(--borde);
+    font-family: var(--font-mono);
+}
+
+.metrica-1rme,
+.metrica-tonelaje {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gris-medio);
+}
+
+.metrica-1rme .valor,
+.metrica-tonelaje .valor {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--blanco);
+    line-height: 1.2;
+}
+
+.metrica-1rme .valor {
+    color: var(--rojo);
+}
+
+.metrica-tonelaje .valor {
+    color: var(--amarillo);
 }
 
 /* ===== 11. CRONÓMETRO FLOTANTE (ESTILO RELOJ DIGITAL) ===== */
