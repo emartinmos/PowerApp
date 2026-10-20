@@ -1772,6 +1772,13 @@ h1, h2, h3 {
     gap: 12px;
 }
 
+.config-grupo-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 0;
+}
+
 .config-label {
     font-size: 0.82rem;
     font-weight: 700;
@@ -1782,6 +1789,25 @@ h1, h2, h3 {
 .config-grupo .stepper {
     width: 140px;
     flex-shrink: 0;
+}
+
+/* Grupo de peso fijo (segunda fila del layout vertical) - horizontal: label a la izquierda, input a la derecha */
+.config-grupo-peso-fijo {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0;
+    gap: 12px;
+}
+
+.config-grupo-peso-fijo .config-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gris-medio);
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
 }
 
 /* Input de peso fijo en configuración de series (standalone, sin stepper) */
@@ -1812,6 +1838,31 @@ h1, h2, h3 {
     color: var(--gris-oscuro);
     font-weight: 400;
     font-size: 0.75rem;
+}
+
+/* Input de peso fijo en fila horizontal */
+.config-grupo-peso-fijo .input-config {
+    width: 140px;
+    max-width: 140px;
+    flex-shrink: 0;
+}
+
+/* Override flex layout for peso-fijo groups to be horizontal */
+.config-grupo.config-grupo-peso-fijo {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0;
+}
+
+/* Ensure input placeholder doesn't truncate on 393px viewport */
+.config-grupo-peso-fijo .input-config::placeholder {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .separador {

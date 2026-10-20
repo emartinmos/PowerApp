@@ -686,25 +686,33 @@
                             <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-warmup-series">+</button>
                         </div>
                     </div>
-                    <div class="config-grupo">
-                        <h3 class="config-label">Top Sets</h3>
-                        <div class="stepper">
-                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-top-series">−</button>
-                            <input type="number" id="input-top-series" class="input-config" value="1" min="0" max="10" step="1" inputmode="numeric">
-                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-top-series">+</button>
+                    <div class="config-grupo-vertical">
+                        <div class="config-grupo">
+                            <h3 class="config-label">Top Sets</h3>
+                            <div class="stepper">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-top-series">−</button>
+                                <input type="number" id="input-top-series" class="input-config" value="1" min="0" max="10" step="1" inputmode="numeric">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-top-series">+</button>
+                            </div>
                         </div>
-                        <h3 class="config-label">Peso Fijo Top Set (opcional, kg)</h3>
-                        <input type="number" id="input-peso-topset" class="input-config" min="0" step="2.5" inputmode="decimal" placeholder="Dejar vacío para cálculo automático">
+                        <div class="config-grupo config-grupo-peso-fijo">
+                            <h3 class="config-label">Peso Fijo Top Set (opcional, kg)</h3>
+                            <input type="number" id="input-peso-topset" class="input-config" min="0" step="2.5" inputmode="decimal" placeholder="Introducir Peso">
+                        </div>
                     </div>
-                    <div class="config-grupo">
-                        <h3 class="config-label">Back-off Sets</h3>
-                        <div class="stepper">
-                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-backoff-series">−</button>
-                            <input type="number" id="input-backoff-series" class="input-config" value="3" min="0" max="10" step="1" inputmode="numeric">
-                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-backoff-series">+</button>
+                    <div class="config-grupo-vertical">
+                        <div class="config-grupo">
+                            <h3 class="config-label">Back-off Sets</h3>
+                            <div class="stepper">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-backoff-series">−</button>
+                                <input type="number" id="input-backoff-series" class="input-config" value="3" min="0" max="10" step="1" inputmode="numeric">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-backoff-series">+</button>
+                            </div>
                         </div>
-                        <h3 class="config-label">Peso Fijo Back-off (opcional, kg)</h3>
-                        <input type="number" id="input-peso-backoff" class="input-config" min="0" step="2.5" inputmode="decimal" placeholder="Dejar vacío para cálculo automático">
+                        <div class="config-grupo config-grupo-peso-fijo">
+                            <h3 class="config-label">Peso Fijo Back-off (opcional, kg)</h3>
+                            <input type="number" id="input-peso-backoff" class="input-config" min="0" step="2.5" inputmode="decimal" placeholder="Introducir Peso">
+                        </div>
                     </div>
                     <hr class="separador">
                     <div class="config-grupo">
@@ -753,15 +761,19 @@
                             <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-planas-warmup">+</button>
                         </div>
                     </div>
-                    <div class="config-grupo">
-                        <h3 class="config-label">Series Efectivas Planas</h3>
-                        <div class="stepper">
-                            <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-planas-series">−</button>
-                            <input type="number" id="input-planas-series" class="input-config" value="3" min="1" max="15" step="1" inputmode="numeric">
-                            <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-planas-series">+</button>
+                    <div class="config-grupo-vertical">
+                        <div class="config-grupo">
+                            <h3 class="config-label">Series Efectivas Planas</h3>
+                            <div class="stepper">
+                                <button type="button" class="stepper-btn stepper-menos" data-step="-1" data-target="input-planas-series">−</button>
+                                <input type="number" id="input-planas-series" class="input-config" value="3" min="1" max="15" step="1" inputmode="numeric">
+                                <button type="button" class="stepper-btn stepper-mas" data-step="1" data-target="input-planas-series">+</button>
+                            </div>
                         </div>
-                        <h3 class="config-label">Peso Fijo Planas (opcional, kg)</h3>
-                        <input type="number" id="input-peso-planas" class="input-config" min="0" step="2.5" inputmode="decimal" placeholder="Dejar vacío para cálculo automático">
+                        <div class="config-grupo config-grupo-peso-fijo">
+                            <h3 class="config-label">Peso Fijo Planas (opcional, kg)</h3>
+                            <input type="number" id="input-peso-planas" class="input-config" min="0" step="2.5" inputmode="decimal" placeholder="Introducir Peso">
+                        </div>
                     </div>
                     <hr class="separador">
                     <div class="config-grupo">
