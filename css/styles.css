@@ -828,10 +828,12 @@ h1, h2, h3 {
     letter-spacing: 0.02em;
     flex: 1;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
     text-transform: uppercase;
+    word-break: break-word;
+    line-height: 1.25;
 }
 
 .ejercicio-porcentaje {
@@ -854,8 +856,8 @@ h1, h2, h3 {
 /* Cabecera de la tabla de series */
 .series-cabecera {
     display: grid;
-    grid-template-columns: 1fr 80px 60px 60px 48px;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) 72px 56px 56px 44px;
+    gap: 6px;
     padding: 8px 4px;
     border-bottom: 1px solid var(--borde);
     font-size: 0.62rem;
@@ -867,19 +869,37 @@ h1, h2, h3 {
 }
 
 .series-cabecera > div {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .series-cabecera > div:first-child {
-    text-align: left;
+    justify-content: flex-start;
     padding-left: 4px;
+}
+
+.series-cabecera > div:nth-child(2) {
+    justify-content: center;
+}
+
+.series-cabecera > div:nth-child(3) {
+    justify-content: center;
+}
+
+.series-cabecera > div:nth-child(4) {
+    justify-content: center;
+}
+
+.series-cabecera > div:nth-child(5) {
+    justify-content: center;
 }
 
 /* Fila de Serie - Tabla Condensada */
 .serie-fila {
     display: grid;
-    grid-template-columns: 1fr 80px 60px 60px 48px;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) 72px 56px 56px 44px;
+    gap: 6px;
     align-items: center;
     background-color: var(--superficie);
     border-bottom: 1px solid var(--borde);
@@ -908,6 +928,15 @@ h1, h2, h3 {
     min-width: 0;
 }
 
+/* Columna OBJETIVO - No truncar texto */
+.celda.objetivo .objetivo-texto {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+    flex-shrink: 0;
+    min-width: 88px;
+}
+
 .celda.check {
     justify-content: center;
 }
@@ -920,30 +949,17 @@ h1, h2, h3 {
     color: var(--rojo);
     letter-spacing: 0.02em;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-}
-
-/* Selector de caída backoff dentro de objetivo */
-.selector-caida-backoff-wrap {
-    margin-top: 4px;
-}
-
-.select-caida-backoff {
-    font-size: 0.62rem;
-    font-family: var(--font-mono);
-    padding: 2px 6px;
-    border-radius: var(--radio-xs);
-    background-color: var(--carbon);
-    border: 1px solid var(--borde);
-    color: var(--blanco);
-    width: auto;
+    overflow: visible;
+    text-overflow: unset;
+    max-width: none;
+    min-width: 88px;
+    flex-shrink: 0;
 }
 
 /* Inputs minimalistas */
 .serie-fila input[type="number"] {
     width: 100%;
+    max-width: 100%;
     height: 36px;
     font-size: 16px; /* Anti-zoom iOS */
     font-weight: 900;
@@ -954,8 +970,9 @@ h1, h2, h3 {
     border: 1px solid var(--borde);
     border-radius: var(--radio-xs);
     color: var(--blanco);
-    padding: 0 8px;
+    padding: 0 4px;
     -moz-appearance: textfield;
+    box-sizing: border-box;
 }
 
 .serie-fila input[type="number"]::-webkit-outer-spin-button,
@@ -1765,6 +1782,36 @@ h1, h2, h3 {
 .config-grupo .stepper {
     width: 140px;
     flex-shrink: 0;
+}
+
+/* Input de peso fijo en configuración de series (standalone, sin stepper) */
+.config-grupo > .input-config {
+    width: 100%;
+    max-width: 100%;
+    height: 40px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    background-color: var(--carbon);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xs);
+    color: var(--blanco);
+    padding: 0 8px;
+    box-sizing: border-box;
+}
+
+.config-grupo > .input-config:focus {
+    outline: none;
+    border-color: var(--rojo);
+    background-color: var(--superficie);
+}
+
+.config-grupo > .input-config::placeholder {
+    color: var(--gris-oscuro);
+    font-weight: 400;
+    font-size: 0.75rem;
 }
 
 .separador {
@@ -2891,39 +2938,6 @@ h1, h2, h3 {
 /* ============================================================
    24. AUTORREGULACIÓN DE BACK-OFFS (% CAÍDA VS TOP SET)
    ============================================================ */
-
-.selector-caida-backoff-wrap {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-}
-
-.label-caida-backoff {
-    font-size: 0.65rem;
-    font-weight: 800;
-    color: var(--gris-medio);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-family: var(--font-mono);
-}
-
-.select-caida-backoff {
-    background-color: var(--carbon);
-    border: 1px solid var(--borde);
-    color: var(--gris-claro);
-    font-size: 0.7rem;
-    font-weight: 700;
-    font-family: var(--font-mono);
-    border-radius: var(--radio-xs);
-    padding: 3px 6px;
-    cursor: pointer;
-}
-
-.select-caida-backoff:focus {
-    border-color: var(--rojo);
-    outline: none;
-}
 
 .peso-auto-actualizado {
     animation: flashBordeActualizado 1.2s ease-out;

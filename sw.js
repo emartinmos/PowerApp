@@ -1,4 +1,4 @@
-const CACHE_NAME = 'powerlifting-pwa-v1.4.1';
+const CACHE_NAME = 'powerlifting-pwa-v1.5.1';
 
 const ASSETS = [
     './',

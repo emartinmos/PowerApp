@@ -10,10 +10,23 @@
 // 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
 // ============================================================
 
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 
 const NOTAS_DE_PARCHE = [
+    {
+        version: 'v1.5.1',
+        fecha: '20/10/2026',
+        titulo: 'Peso Fijo Opcional por Serie en Constructor de Rutinas',
+        cambios: [
+            'Soporte para definir cargas objetivo fijas (ej. 195 kg) en Top Sets, Back-offs y Series Planas durante la configuración de la rutina.',
+            'Nuevos campos opcionales "Peso Fijo" en el modal de configuración de series (Top Set + Back-off y Series Planas).',
+            'Si se define peso fijo: la columna OBJETIVO muestra el peso exacto (ej. "195 x 3") y el input PESO se pre-rellena con dicho valor.',
+            'Si se deja vacío: el sistema calcula dinámicamente la sugerencia desde el 1RM de sesión o muestra guión (−) si no hay marcas registradas.',
+            'El auto-cálculo de Back-offs respeta los pesos fijos definidos y no los sobrescribe al recalcular desde el Top Set.',
+            'Persistencia completa en localStorage: pesos fijos se guardan en la rutina y se restauran al editar.'
+        ]
+    },
     {
         version: 'v1.5.0',
         fecha: '20/10/2026',
@@ -2211,11 +2224,14 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
     const inputRpeTop = document.getElementById('input-rpe-objetivo');
     const inputRepsBackoff = document.getElementById('input-reps-backoff');
     const selectCaidaBackoff = document.getElementById('select-backoff-caida');
+    const inputPesoTopset = document.getElementById('input-peso-topset');
+    const inputPesoBackoff = document.getElementById('input-peso-backoff');
 
     const inputPlanasWarmup = document.getElementById('input-planas-warmup');
     const inputPlanasSeries = document.getElementById('input-planas-series');
     const inputPlanasReps = document.getElementById('input-planas-reps');
     const inputPlanasRpe = document.getElementById('input-planas-rpe');
+    const inputPesoPlanas = document.getElementById('input-peso-planas');
 
     const ej = buscarEjercicioPorId(ejercicioId);
     if (titulo) {
@@ -2233,6 +2249,7 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
             if (inputPlanasSeries) inputPlanasSeries.value = configExistente.planas ?? 3;
             if (inputPlanasReps) inputPlanasReps.value = configExistente.repsPlanas ?? 8;
             if (inputPlanasRpe) inputPlanasRpe.value = configExistente.rpePlanas ?? 8;
+            if (inputPesoPlanas) inputPesoPlanas.value = configExistente.pesoFijoPlanas ?? '';
 
             if (inputWarmup) inputWarmup.value = 2;
             if (inputTop) inputTop.value = 1;
@@ -2250,6 +2267,8 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
             if (inputRpeTop) inputRpeTop.value = configExistente.rpeTop ?? 8;
             if (inputRepsBackoff) inputRepsBackoff.value = configExistente.repsBackoff ?? 5;
             if (selectCaidaBackoff) selectCaidaBackoff.value = String(configExistente.caidaBackoff !== undefined ? configExistente.caidaBackoff : -10);
+            if (inputPesoTopset) inputPesoTopset.value = configExistente.pesoFijoTopset ?? '';
+            if (inputPesoBackoff) inputPesoBackoff.value = configExistente.pesoFijoBackoff ?? '';
 
             if (inputPlanasWarmup) inputPlanasWarmup.value = 1;
             if (inputPlanasSeries) inputPlanasSeries.value = 3;
@@ -2266,11 +2285,14 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
         if (inputRpeTop) inputRpeTop.value = 8;
         if (inputRepsBackoff) inputRepsBackoff.value = 5;
         if (selectCaidaBackoff) selectCaidaBackoff.value = '-10';
+        if (inputPesoTopset) inputPesoTopset.value = '';
+        if (inputPesoBackoff) inputPesoBackoff.value = '';
 
         if (inputPlanasWarmup) inputPlanasWarmup.value = 1;
         if (inputPlanasSeries) inputPlanasSeries.value = 3;
         if (inputPlanasReps) inputPlanasReps.value = 8;
         if (inputPlanasRpe) inputPlanasRpe.value = 8;
+        if (inputPesoPlanas) inputPesoPlanas.value = '';
     }
 
     if (modal) modal.classList.add('activo');
@@ -2303,6 +2325,7 @@ function confirmarConfigSeries() {
         const seriesPlanasCount = Math.max(0, parseInt(document.getElementById('input-planas-series')?.value) || 0);
         const repsPlanas = Math.max(1, parseInt(document.getElementById('input-planas-reps')?.value) || 8);
         const rpePlanas = Math.min(10, Math.max(5, parseFloat(document.getElementById('input-planas-rpe')?.value) || 8));
+        const pesoFijoPlanas = parseFloat(document.getElementById('input-peso-planas')?.value) || null;
 
         if (warmupCount + seriesPlanasCount === 0) {
             mostrarToast('CONFIGURA AL MENOS 1 SERIE');
@@ -2327,7 +2350,8 @@ function confirmarConfigSeries() {
                 etiqueta: 'Plana',
                 repsObjetivo: repsPlanas,
                 rpeObjetivo: rpePlanas,
-                pesoSugerido: 0
+                pesoSugerido: 0,
+                pesoFijo: pesoFijoPlanas
             });
         }
 
@@ -2339,7 +2363,8 @@ function confirmarConfigSeries() {
                 warmup: warmupCount,
                 planas: seriesPlanasCount,
                 repsPlanas: repsPlanas,
-                rpePlanas: rpePlanas
+                rpePlanas: rpePlanas,
+                pesoFijoPlanas: pesoFijoPlanas
             },
             series: seriesConstruidas
         };
@@ -2351,6 +2376,9 @@ function confirmarConfigSeries() {
         const repsTop = Math.max(1, parseInt(document.getElementById('input-reps-objetivo')?.value) || 1);
         const rpeTop = Math.min(10, Math.max(5, parseFloat(document.getElementById('input-rpe-objetivo')?.value) || 8));
         const repsBackoff = Math.max(1, parseInt(document.getElementById('input-reps-backoff')?.value) || 1);
+
+        const pesoFijoTopset = parseFloat(document.getElementById('input-peso-topset')?.value) || null;
+        const pesoFijoBackoff = parseFloat(document.getElementById('input-peso-backoff')?.value) || null;
 
         if (warmupCount + topCount + backoffCount === 0) {
             mostrarToast('CONFIGURA AL MENOS 1 SERIE');
@@ -2375,7 +2403,8 @@ function confirmarConfigSeries() {
                 etiqueta: 'Top Set',
                 repsObjetivo: repsTop,
                 rpeObjetivo: rpeTop,
-                pesoSugerido: 0
+                pesoSugerido: 0,
+                pesoFijo: pesoFijoTopset
             });
         }
 
@@ -2389,7 +2418,8 @@ function confirmarConfigSeries() {
                 repsObjetivo: repsBackoff,
                 rpeObjetivo: Math.max(5, rpeTop - 1),
                 pesoSugerido: 0,
-                caidaPorcentaje: caidaBackoff
+                caidaPorcentaje: caidaBackoff,
+                pesoFijo: pesoFijoBackoff
             });
         }
 
@@ -2404,7 +2434,9 @@ function confirmarConfigSeries() {
                 repsTop: repsTop,
                 rpeTop: rpeTop,
                 repsBackoff: repsBackoff,
-                caidaBackoff: caidaBackoff
+                caidaBackoff: caidaBackoff,
+                pesoFijoTopset: pesoFijoTopset,
+                pesoFijoBackoff: pesoFijoBackoff
             },
             series: seriesConstruidas
         };
@@ -3295,30 +3327,29 @@ iniciarEntrenamiento = function(rutinaId) {
             const repsSugeridas = serie.repsObjetivo || (esTopSet ? 3 : (esPlana ? 8 : 5));
             const rpeSugerido = serie.rpeObjetivo || (esTopSet ? 8 : (esPlana ? 8 : 6));
 
-            // OBJETIVO: "peso x reps" (peso sugerido x reps objetivo)
-            const objetivoTexto = `${pesoSugerido} x ${repsSugeridas}`;
+            // OBJETIVO: si hay peso fijo definido en la rutina, usarlo; si no, usar cálculo dinámico; si no hay 1RM, mostrar guión
+            let objetivoTexto;
+            if (serie.pesoFijo !== undefined && serie.pesoFijo !== null) {
+                objetivoTexto = `${serie.pesoFijo} x ${repsSugeridas}`;
+            } else if (pesoSugerido > 0) {
+                objetivoTexto = `${pesoSugerido} x ${repsSugeridas}`;
+            } else {
+                objetivoTexto = `− x ${repsSugeridas}`;
+            }
 
-            const caidaDefecto = (serie.caidaPorcentaje !== undefined) ? serie.caidaPorcentaje : -10;
-            const selectorBackoffHtml = esBackoff ? `
-                <div class="selector-caida-backoff-wrap">
-                    <select class="select-caida-backoff" aria-label="Porcentaje de caída vs Top Set" data-ej-index="${indexEj}" data-serie-index="${indexSerie}">
-                        <option value="-5" ${caidaDefecto === -5 ? 'selected' : ''}>-5%</option>
-                        <option value="-10" ${caidaDefecto === -10 ? 'selected' : ''}>-10%</option>
-                        <option value="-15" ${caidaDefecto === -15 ? 'selected' : ''}>-15%</option>
-                        <option value="-20" ${caidaDefecto === -20 ? 'selected' : ''}>-20%</option>
-                        <option value="0" ${caidaDefecto === 0 ? 'selected' : ''}>Manual</option>
-                    </select>
-                </div>
-            ` : '';
+            // Valor del input PESO: si hay peso fijo, usarlo como valor inicial; si no, usar sugerido
+            const pesoInputInicial = (serie.pesoFijo !== undefined && serie.pesoFijo !== null) ? serie.pesoFijo : pesoSugerido;
+
+            // Back-offs usan la caída guardada en la config, sin selector visible en la UI
+            // const caidaDefecto = (serie.caidaPorcentaje !== undefined) ? serie.caidaPorcentaje : -10;
 
             return `
                 <div class="serie-fila ${claseFila}" data-ej-index="${indexEj}" data-serie-index="${indexSerie}" data-tipo="${serie.tipo}">
                     <div class="celda objetivo" data-label="OBJETIVO">
                         <span class="objetivo-texto">${objetivoTexto}</span>
-                        ${selectorBackoffHtml}
                     </div>
                     <div class="celda peso" data-label="PESO">
-                        <input type="number" class="input-peso" value="${pesoSugerido}" step="2.5" min="0" inputmode="decimal" placeholder="−" aria-label="Peso en kg">
+                        <input type="number" class="input-peso" value="${pesoInputInicial}" step="2.5" min="0" inputmode="decimal" placeholder="−" aria-label="Peso en kg">
                     </div>
                     <div class="celda reps" data-label="REPS">
                         <input type="number" class="input-reps" value="${repsSugeridas}" step="1" min="1" max="50" inputmode="numeric" placeholder="−" aria-label="Repeticiones">
@@ -3348,7 +3379,7 @@ iniciarEntrenamiento = function(rutinaId) {
         `;
 
         return `
-            <div class="bloque-ejercicio" data-ej-id="${ejInfo.id}" data-categoria="${ejInfo.categoria}">
+            <div class="bloque-ejercicio" data-ej-index="${indexEj}" data-ej-id="${ejInfo.id}" data-categoria="${ejInfo.categoria}">
                 <div class="bloque-ejercicio-header">
                     <h2 class="ejercicio-nombre">${indexEj + 1}. ${ejInfo.nombre}</h2>
                     <span class="ejercicio-porcentaje">${texto1RMInicial}</span>
@@ -3438,27 +3469,49 @@ function inicializarEventosEntrenamientoActivo() {
     if (!contenedor) return;
 
     // Función para calcular e inyectar automáticamente la carga en Back-offs desde el Top Set
-    function actualizarCargasBackoffsDesdeTopSet(bloque) {
+    function actualizarCargasBackoffsDesdeTopSet(bloque, indexEj = null) {
         if (!bloque) return;
         const filaTop = bloque.querySelector('.serie-fila[data-tipo="topset"]');
         if (!filaTop) return;
         const pesoTop = parseFloat(filaTop.querySelector('.input-peso')?.value) || 0;
         if (pesoTop <= 0) return;
 
+        // Obtener el índice del ejercicio si no se pasó
+        if (indexEj === null) {
+            indexEj = parseInt(bloque.dataset.ejIndex ?? bloque.dataset.ejId ?? '0', 10);
+        }
+
+        const rutina = APP.entrenamientoActivo.rutinaId ? obtenerRutinas().find(r => r.id === APP.entrenamientoActivo.rutinaId) : null;
+        const ejConfig = rutina?.ejercicios?.[indexEj];
+        const seriesConfig = ejConfig?.series || [];
+
         const filasBackoff = bloque.querySelectorAll('.serie-fila[data-tipo="backoff"]');
         let actualizados = 0;
-        filasBackoff.forEach(fila => {
-            const selectCaida = fila.querySelector('.select-caida-backoff');
-            const caida = selectCaida ? parseFloat(selectCaida.value) : -10;
-            if (caida !== 0) {
+        filasBackoff.forEach((fila, idx) => {
+            // Usar la caída guardada en la configuración de la serie (data-serie-index)
+            const serieIdx = parseInt(fila.dataset.serieIndex ?? String(idx), 10);
+            const serieConfig = seriesConfig[serieIdx];
+            const caida = (serieConfig?.caidaPorcentaje !== undefined) ? serieConfig.caidaPorcentaje : -10;
+
+            // NO auto-calcular si la serie tiene peso fijo definido en la rutina
+            const tienePesoFijo = (serieConfig?.pesoFijo !== undefined && serieConfig?.pesoFijo !== null);
+
+            if (caida !== 0 && !tienePesoFijo) {
                 const factor = 1 + (caida / 100);
                 const pesoCalc = Math.max(20, Math.round((pesoTop * factor) / 2.5) * 2.5);
                 const inputPeso = fila.querySelector('.input-peso');
+                const inputReps = fila.querySelector('.input-reps');
                 if (inputPeso && parseFloat(inputPeso.value) !== pesoCalc) {
                     inputPeso.value = pesoCalc;
                     inputPeso.classList.remove('peso-auto-actualizado');
                     void inputPeso.offsetWidth;
                     inputPeso.classList.add('peso-auto-actualizado');
+                    // Actualizar objetivo texto del backoff
+                    const reps = parseInt(inputReps?.value, 10) || 0;
+                    const objetivoEl = fila.querySelector('.objetivo-texto');
+                    if (objetivoEl && pesoCalc > 0 && reps > 0) {
+                        objetivoEl.textContent = `${pesoCalc} x ${reps}`;
+                    }
                     actualizados++;
                 }
             }
@@ -3478,26 +3531,45 @@ function inicializarEventosEntrenamientoActivo() {
                 const marcas = obtenerMarcas1RM();
                 actualizarPorcentajeBloque(bloque, cat, marcas);
                 if (fila && fila.dataset.tipo === 'topset') {
-                    actualizarCargasBackoffsDesdeTopSet(bloque);
+                    const indexEj = parseInt(bloque.dataset.ejIndex ?? bloque.dataset.ejId ?? '0', 10);
+                    actualizarCargasBackoffsDesdeTopSet(bloque, indexEj);
                 }
             }
             // Actualizar footer del ejercicio (1RME y Tonelaje) en cada cambio
             if (bloque) {
                 actualizarFooterEjercicio(bloque);
             }
-        } else if (e.target.classList.contains('input-reps') || e.target.classList.contains('input-rpe')) {
+            // Actualizar texto OBJETIVO en la fila actual (peso x reps)
+            if (fila) {
+                const inputReps = fila.querySelector('.input-reps');
+                const peso = parseFloat(e.target.value) || 0;
+                const reps = parseInt(inputReps?.value, 10) || 0;
+                const objetivoEl = fila.querySelector('.objetivo-texto');
+                if (objetivoEl && peso > 0 && reps > 0) {
+                    objetivoEl.textContent = `${peso} x ${reps}`;
+                }
+            }
+        } else if (e.target.classList.contains('input-reps')) {
+            const bloque = e.target.closest('.bloque-ejercicio');
+            const fila = e.target.closest('.serie-fila');
+            if (bloque) {
+                actualizarFooterEjercicio(bloque);
+            }
+            // Actualizar texto OBJETIVO en la fila actual
+            if (fila) {
+                const inputPeso = fila.querySelector('.input-peso');
+                const peso = parseFloat(inputPeso?.value) || 0;
+                const reps = parseInt(e.target.value, 10) || 0;
+                const objetivoEl = fila.querySelector('.objetivo-texto');
+                if (objetivoEl && peso > 0 && reps > 0) {
+                    objetivoEl.textContent = `${peso} x ${reps}`;
+                }
+            }
+        } else if (e.target.classList.contains('input-rpe')) {
             const bloque = e.target.closest('.bloque-ejercicio');
             if (bloque) {
                 actualizarFooterEjercicio(bloque);
             }
-        }
-    });
-
-    // Escuchar cambios en el selector de caída de back-offs
-    contenedor.addEventListener('change', (e) => {
-        if (e.target.classList.contains('select-caida-backoff')) {
-            const bloque = e.target.closest('.bloque-ejercicio');
-            actualizarCargasBackoffsDesdeTopSet(bloque);
         }
     });
 
@@ -3520,7 +3592,8 @@ function inicializarEventosEntrenamientoActivo() {
             // Si es un Top Set, recalcular e inyectar Back-offs automáticamente
             if (fila.dataset.tipo === 'topset') {
                 const bloque = fila.closest('.bloque-ejercicio');
-                actualizarCargasBackoffsDesdeTopSet(bloque);
+                const indexEj = parseInt(bloque.dataset.ejIndex ?? bloque.dataset.ejId ?? '0', 10);
+                actualizarCargasBackoffsDesdeTopSet(bloque, indexEj);
             }
 
             // Comprobar si todas las series del entrenamiento están completadas
