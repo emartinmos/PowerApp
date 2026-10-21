@@ -58,7 +58,7 @@ Progressive Web App (PWA) de alto rendimiento para el seguimiento, control y per
   - Cálculo instantáneo de **Puntos DOTS** mediante polinomio de 4º grado para comparación normalizada entre categorías de peso.
 
 ### Control de Versiones y Notas de Parche (Changelog)
-- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.4.1`) con tipografía en números tabulares e icono vectorial.
+- Botón tipo badge técnico integrado en la cabecera principal (`NOTAS v1.6.0`) con tipografía en números tabulares e icono vectorial.
 - Indicador luminoso en rojo carmesí de versión no leída, sincronizado automáticamente contra `localStorage` (`ultimaVersionLeida` vs `APP_VERSION`).
 - Modal técnico de lectura con desglose cronológico de versiones, fechas y cambios detallados (v1.4.1 actual, v1.4.0, v1.3.0, v1.2.0, v1.1.0 y v1.0.0 inicial).
 

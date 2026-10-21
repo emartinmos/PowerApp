@@ -10,10 +10,22 @@
 // 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
 // ============================================================
 
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.6.0';
 const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 
 const NOTAS_DE_PARCHE = [
+    {
+        version: 'v1.6.0',
+        fecha: '21/10/2026',
+        titulo: 'Corrección de Layout Responsivo y Reorganización del Header',
+        cambios: [
+            'Los botones son ahora más fáciles de pulsar y no se superponen en pantallas pequeñas.',
+            'El menú de notas se ha movido a la sección de historial para ganar espacio en la pantalla principal.',
+            'Las tablas de series se ajustan mejor al ancho del móvil sin necesidad de desplazarse.',
+            'Los modales y ventanas emergentes ya no cortan el contenido y se pueden recorrer con el dedo.',
+            'Mejora de compatibilidad con la barra inferior e insignia de iPhone (Dynamic Island).'
+        ]
+    },
     {
         version: 'v1.5.1',
         fecha: '20/10/2026',
@@ -283,7 +295,8 @@ const LS_KEYS = {
     EJERCICIOS_CUSTOM: 'pl_ejercicios_custom',
     MARCAS_1RM: 'pl_marcas_1rm',
     CRONO_SONIDO: 'pl_crono_sonido',
-    COMPETICION: 'pl_meet_day'
+    COMPETICION: 'pl_meet_day',
+    APP_MODE: 'pl_app_mode'
 };
 
 // Etiquetas técnicas rápidas disponibles para micro-notas por serie
@@ -2295,7 +2308,11 @@ function abrirModalConfigSeries(ejercicioId, indexEditar = null) {
         if (inputPesoPlanas) inputPesoPlanas.value = '';
     }
 
-    if (modal) modal.classList.add('activo');
+    if (modal) {
+        modal.classList.add('activo');
+        // Aplicar visibilidad de campos según modo actual al abrir el modal
+        applyAppMode();
+    }
 }
 
 /**
@@ -4533,6 +4550,106 @@ function inicializarDelegacionHistorial() {
     });
 }
 
+/**
+ * Alterna entre modo Powerlifting y Gimnasio Estándar.
+ * Guarda la preferencia en localStorage y aplica los cambios visuales.
+ */
+function toggleAppMode() {
+    const current = localStorage.getItem(LS_KEYS.APP_MODE) || 'powerlifting';
+    const newMode = current === 'powerlifting' ? 'standard' : 'powerlifting';
+    localStorage.setItem(LS_KEYS.APP_MODE, newMode);
+    applyAppMode();
+    actualizarModoUI();
+    console.log('[MODE] Cambiado a', newMode);
+}
+
+/**
+ * Aplica el modo de aplicación actual (clases CSS y ajustes de UI).
+ * @param {string} mode - 'powerlifting' o 'standard'
+ */
+function applyAppMode(mode = null) {
+    const currentMode = mode || localStorage.getItem(LS_KEYS.APP_MODE) || 'powerlifting';
+    window.APP_MODE = currentMode;
+
+    // Aplicar clases al body para control por CSS
+    document.body.classList.toggle('mode-standard', currentMode === 'standard');
+    document.body.classList.toggle('mode-powerlifting', currentMode === 'powerlifting');
+
+    // Ajustar columnas y métricas según el modo
+    const isPowerlifting = currentMode === 'powerlifting';
+
+    // Ocultar/mostrar columnas RPE
+    const rpeInputs = document.querySelectorAll('.input-rpe');
+    rpeInputs.forEach(inp => {
+        const celda = inp.closest('.celda');
+        if (celda) celda.style.display = isPowerlifting ? '' : 'none';
+    });
+
+    const rpeHeaders = document.querySelectorAll('.series-cabecera > div:nth-child(4)');
+    rpeHeaders.forEach(h => h.style.display = isPowerlifting ? '' : 'none');
+
+    // Ocultar/mostrar métrica e1RM
+    const e1rmMetrics = document.querySelectorAll('.metrica-1rme');
+    e1rmMetrics.forEach(m => m.style.display = isPowerlifting ? '' : 'none');
+
+    // Ajustar distribución de grid para series
+    const seriesRows = document.querySelectorAll('.serie-fila');
+    seriesRows.forEach(row => {
+        if (isPowerlifting) {
+            row.style.gridTemplateColumns = 'minmax(0,1fr) 72px 56px 56px 44px';
+        } else {
+            row.style.gridTemplateColumns = 'minmax(0,1fr) 70px 56px 44px';
+        }
+    });
+
+    // Ajustar cabecera de series
+    const seriesHeaders = document.querySelectorAll('.series-cabecera');
+    seriesHeaders.forEach(header => {
+        if (isPowerlifting) {
+            header.style.gridTemplateColumns = 'minmax(0,1fr) 72px 56px 56px 44px';
+        } else {
+            header.style.gridTemplateColumns = 'minmax(0,1fr) 70px 56px 44px';
+        }
+    });
+
+    // Modal Config Series: ocultar/mostrar campos específicos de Powerlifting (RPE y % caída back-off)
+    const rpeTopsetGroup = document.querySelector('#input-rpe-objetivo')?.closest('.config-grupo');
+    const rpePlanasGroup = document.querySelector('#input-planas-rpe')?.closest('.config-grupo');
+    const caidaBackoffGroup = document.querySelector('#select-backoff-caida')?.closest('.config-grupo');
+
+    [rpeTopsetGroup, rpePlanasGroup, caidaBackoffGroup].forEach(g => {
+        if (g) g.style.display = isPowerlifting ? '' : 'none';
+    });
+}
+
+/**
+ * Actualiza el texto del botón de toggle según el modo actual.
+ */
+function actualizarModoUI() {
+    const mode = localStorage.getItem(LS_KEYS.APP_MODE) || 'powerlifting';
+    const btn = document.getElementById('btn-toggle-modo');
+    if (btn) {
+        const span = btn.querySelector('#texto-modo');
+        if (span) {
+            span.textContent = mode === 'powerlifting' ? 'Modo Powerlifting' : 'Modo Gimnasio';
+        }
+    }
+}
+
+/**
+ * Inicializa el selector de modo de aplicación (Powerlifting / Gimnasio Estándar).
+ * Aplica la preferencia guardada en localStorage al cargar la app.
+ */
+function inicializarModoApp() {
+    const btnToggle = document.getElementById('btn-toggle-modo');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', toggleAppMode);
+    }
+    // Aplicar modo guardado al inicio
+    applyAppMode();
+    actualizarModoUI();
+}
+
 // ============================================================
 // 15. MÓDULO PLANIFICADOR DE TARIMA / MEET DAY (COMPETICIÓN)
 // ============================================================
@@ -5101,6 +5218,9 @@ async function initApp() {
 
     // 9. Inicializar instalador PWA
     inicializarInstalacionPWA();
+
+    // 10. Inicializar selector de modo de aplicación
+    inicializarModoApp();
 
     console.log('[OK] [QA Engine] Todos los botones y eventos quedaron conectados correctamente.');
 }
