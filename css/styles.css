@@ -1014,14 +1014,6 @@ h1, h2, h3 {
     border-bottom: none;
 }
 
-/* Celdas */
-.celda {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-}
-
 .celda.objetivo {
     justify-content: flex-start;
     padding-left: 4px;
@@ -3764,7 +3756,91 @@ h1, h2, h3 {
     color: var(--blanco);
 }
 
+/* ===== Historial de Cargas por Ejercicio ===== */
+.historial-cargas-sesion {
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio-sm);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
 
+.historial-cargas-sesion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    background-color: var(--superficie);
+    border-bottom: 1px solid var(--borde-fuerte);
+}
+
+.historial-cargas-fecha {
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--blanco);
+    letter-spacing: 0.03em;
+}
+
+.historial-cargas-rutina {
+    font-size: 0.7rem;
+    color: var(--gris-medio);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.historial-cargas-tipo {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 12px 4px;
+    color: var(--acento);
+    border-bottom: 1px solid var(--borde);
+    background-color: rgba(229, 9, 20, 0.04);
+}
+
+.historial-cargas-entrada {
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+    color: var(--gris-claro);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--borde);
+    letter-spacing: 0.02em;
+}
+
+.historial-cargas-entrada:last-child {
+    border-bottom: none;
+}
+
+.historial-cargas-entrada strong {
+    color: var(--blanco);
+}
+
+/* ===== Nombre de ejercicio clickeable en entrenamiento ===== */
+.ejercicio-nombre.clickeable {
+    cursor: pointer;
+    transition: opacity 120ms ease;
+}
+
+.ejercicio-nombre.clickeable:hover,
+.ejercicio-nombre.clickeable:active {
+    opacity: 0.75;
+}
+
+.ejercicio-nombre.clickeable::after {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--acento);
+    margin-left: 8px;
+    vertical-align: middle;
+    opacity: 0.7;
+}
 
 
 

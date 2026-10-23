@@ -10,20 +10,30 @@
 // 0. CONTROL DE VERSIONES Y NOTAS DE PARCHE (CHANGELOG)
 // ============================================================
 
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 const STORAGE_VERSION_LEIDA = 'ultimaVersionLeida';
 
 const NOTAS_DE_PARCHE = [
     {
+        version: 'v1.7.0',
+        fecha: '23/10/2026',
+        titulo: 'Historial de cargas desde el entrenamiento activo',
+        cambios: [
+            'Pulsa el nombre de un ejercicio durante el entrenamiento para ver todas las cargas que has movido antes.',
+            'Se muestran fecha, rutina y cargas completadas por tipo: Top Set, Back-off, Plana y Warm-up.',
+            'Lista ordenada de más reciente a menos reciente para ver primero lo último que entrenaste.',
+            'Se elimina la información duplicada "Ghost Sets" del entrenamiento activo.'
+        ]
+    },
+    {
         version: 'v1.6.0',
         fecha: '21/10/2026',
-        titulo: 'Corrección de Layout Responsivo y Reorganización del Header',
+        titulo: 'Modo Powerlifting / Gimnasio',
         cambios: [
-            'Los botones son ahora más fáciles de pulsar y no se superponen en pantallas pequeñas.',
-            'El menú de notas se ha movido a la sección de historial para ganar espacio en la pantalla principal.',
-            'Las tablas de series se ajustan mejor al ancho del móvil sin necesidad de desplazarse.',
-            'Los modales y ventanas emergentes ya no cortan el contenido y se pueden recorrer con el dedo.',
-            'Mejora de compatibilidad con la barra inferior e insignia de iPhone (Dynamic Island).'
+            'Nuevo botón en la cabecera para cambiar entre Modo Powerlifting y Modo Gimnasio.',
+            'En Modo Gimnasio se oculta la columna RPE y la métrica de 1RME para simplificar la vista.',
+            'El diseño de la tabla de series se adapta automáticamente a cada modo.',
+            'La preferencia se guarda y se restaura al abrir la app.'
         ]
     },
     {
@@ -367,6 +377,7 @@ function guardarRutinas(rutinas) {
 function obtenerHistorial() {
     return leerLocalStorage(LS_KEYS.HISTORIAL, []);
 }
+
 
 /**
  * Guarda el historial completo.
@@ -3398,7 +3409,7 @@ iniciarEntrenamiento = function(rutinaId) {
         return `
             <div class="bloque-ejercicio" data-ej-index="${indexEj}" data-ej-id="${ejInfo.id}" data-categoria="${ejInfo.categoria}">
                 <div class="bloque-ejercicio-header">
-                    <h2 class="ejercicio-nombre">${indexEj + 1}. ${ejInfo.nombre}</h2>
+                    <h2 class="ejercicio-nombre clickeable" data-ej-id="${ejInfo.id}" style="cursor:pointer;">${indexEj + 1}. ${ejInfo.nombre}</h2>
                     <span class="ejercicio-porcentaje">${texto1RMInicial}</span>
                 </div>
                 <div class="series-lista">
@@ -3473,6 +3484,98 @@ function actualizarFooterEjercicio(bloque) {
     }
 }
 
+/**
+ * Obtiene todas las series completadas de un ejercicio desde el historial,
+ * organizadas por sesiones y con resumen por tipo (Top Set, Back-off, Plana, Warm-up).
+ */
+function obtenerHistorialCargasEjercicio(ejercicioId) {
+    const historial = obtenerHistorial();
+    const sesiones = [];
+
+    for (let i = 0; i < historial.length; i++) {
+        const ses = historial[i];
+        if (!ses.ejercicios) continue;
+        for (const ej of ses.ejercicios) {
+            if (ej.ejercicioId === ejercicioId) {
+                const series = (ej.series || []).filter(s => s.completada && s.peso > 0 && s.reps > 0);
+                if (series.length === 0) continue;
+                // Agrupar por tipo
+                const porTipo = {};
+                series.forEach(s => {
+                    const tipo = s.tipo || 'warmup';
+                    if (!porTipo[tipo]) porTipo[tipo] = [];
+                    porTipo[tipo].push({
+                        peso: s.peso,
+                        reps: s.reps,
+                        rpe: s.rpe ?? null
+                    });
+                });
+                sesiones.push({
+                    fecha: ses.fecha,
+                    fechaFormateada: formatearFecha(ses.fecha).completa,
+                    rutinaNombre: ses.rutinaNombre || 'Entrenamiento',
+                    porTipo
+                });
+                break; // un ejercicio por sesión
+            }
+        }
+    }
+    // Ordenar de más reciente a menos reciente
+    sesiones.sort((a, b) => b.fecha.localeCompare(a.fecha));
+    return sesiones;
+}
+
+/**
+ * Abre un modal con el historial de cargas de un ejercicio durante el entrenamiento.
+ */
+function abrirHistorialCargasEjercicio(ejercicioId) {
+    const ejInfo = buscarEjercicioPorId(ejercicioId);
+    const nombre = ejInfo ? ejInfo.nombre : ejercicioId;
+    const sesiones = obtenerHistorialCargasEjercicio(ejercicioId);
+
+    let html = `
+        <h3 style="margin-bottom:12px; font-size:1.1rem; font-weight:700;">${nombre}</h3>
+    `;
+
+    if (sesiones.length === 0) {
+        html += `<p style="color:var(--gris-medio);">No hay registros de cargas completadas para este ejercicio.</p>`;
+    } else {
+        sesiones.forEach(ses => {
+            html += `
+                <section class="historial-cargas-sesion">
+                    <header class="historial-cargas-sesion-header">
+                        <span class="historial-cargas-fecha">${ses.fechaFormateada}</span>
+                        <span class="historial-cargas-rutina">${ses.rutinaNombre}</span>
+                    </header>
+            `;
+            Object.entries(ses.porTipo).forEach(([tipo, items]) => {
+                const labelTipo = tipo === 'topset' ? 'Top Set' : tipo === 'backoff' ? 'Back-off' : tipo === 'plana' ? 'Plana' : 'Warm-up';
+                html += `<div class="historial-cargas-tipo"><strong>${labelTipo}</strong></div>`;
+                items.forEach(it => {
+                    const rpeTxt = it.rpe ? ` @ RPE ${it.rpe}` : '';
+                    html += `<div class="historial-cargas-entrada">${it.peso} kg × ${it.reps}${rpeTxt}</div>`;
+                });
+            });
+            html += `</section>`;
+        });
+    }
+
+    const modal = document.getElementById('modal-historial-cargas');
+    if (!modal) return;
+
+    const contenido = document.getElementById('contenido-historial-cargas');
+    if (contenido) contenido.innerHTML = html;
+
+    modal.classList.add('activo');
+
+    const btnCerrar = document.getElementById('btn-cerrar-historial-cargas');
+    if (btnCerrar) {
+        btnCerrar.onclick = () => {
+            modal.classList.remove('activo');
+        };
+    }
+}
+
 // ------------------------------------------------------------
 // C. DELEGACIÓN DE EVENTOS EN EL ENTRENAMIENTO ACTIVO
 // ------------------------------------------------------------
@@ -3484,6 +3587,15 @@ function inicializarEventosEntrenamientoActivo() {
 
     const contenedor = document.getElementById('contenido-entrenamiento');
     if (!contenedor) return;
+
+    // Delegación de click en nombres de ejercicio: abrir historial de cargas
+    contenedor.addEventListener('click', (e) => {
+        const titulo = e.target.closest('.ejercicio-nombre.clickeable');
+        if (titulo) {
+            const ejId = titulo.dataset.ejId;
+            if (ejId) abrirHistorialCargasEjercicio(ejId);
+        }
+    });
 
     // Función para calcular e inyectar automáticamente la carga en Back-offs desde el Top Set
     function actualizarCargasBackoffsDesdeTopSet(bloque, indexEj = null) {

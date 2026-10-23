@@ -1,47 +1,41 @@
-# Informe de Análisis y Propuesta de Funcionalidades Técnicas
-
-Tras la inspección analítica de la base de código actual (`index.html`, `css/styles.css`, `js/app.js`, `data/ejercicios.json`, `manifest.json` y `sw.js`), se presenta el siguiente informe estructurado de mejoras técnicas y de producto pendientes de implementación. Las propuestas están orientadas a consolidar la herramienta como una solución de referencia para levantadores de fuerza competitivos y elevar el estándar de ingeniería para un perfil profesional o académico (DAW).
+# Informe de Análisis y Propuestas Técnicas Pendientes
 
 ---
 
-## 1. Analítica, Progreso y Gestión de Datos (Seguridad de Almacenamiento)
+## 1. Experiencia de Usuario (UX) y Funcionalidades en el Gimnasio
 
-### 1.1 Sistema de Copia de Seguridad Integral (Exportación e Importación JSON/CSV)
-- **Para qué sirve:** Elimina el riesgo crítico de pérdida de datos ante limpiezas de caché de iOS Safari o formateos del dispositivo. Permite descargar un archivo `pl_backup_YYYY-MM-DD.json` con todas las rutinas, historial de entrenamientos, 1RM y ejercicios personalizados, con validación de esquema al importar, así como exportar el historial a `.csv` para análisis en hojas de cálculo.
+### 1.1 Generador Automático de Rampas de Calentamiento (Ramping Sets)
+- **Para qué sirve:** Al definir la carga objetivo de una serie pesada (`Top Set`), calcula e inyecta automáticamente una progresión de aproximación sugerida (Barra sola, 50%, 70%, 85% y single del 95%) para optimizar la preparación neuromuscular previa al esfuerzo máximo.
 - **Nivel de dificultad:** Bajo.
 
-### 1.2 Capa de Persistencia Asíncrona con IndexedDB
-- **Para qué sirve:** `localStorage` es síncrono y está limitado a aproximadamente 5 MB, lo que puede provocar microbloqueos de la interfaz si el historial acumula cientos de sesiones con decenas de series. La transición a IndexedDB (manteniendo compatibilidad de lectura previa) garantiza almacenamiento virtualmente ilimitado y operaciones asíncronas no bloqueantes.
+### 1.2 Exportador de Resumen de Sesión a Imagen (Social Share Card)
+- **Para qué sirve:** Genera dinámicamente mediante un elemento `<canvas>` nativo una tarjeta gráfica resumen de la sesión completada (Top Sets, tonelaje total, PRs superados y marca de la app) con la estética *Industrial Dark*, descargable en `.png` para compartir.
 - **Nivel de dificultad:** Medio.
 
 ### 1.3 Control de Fatiga y Volumen Efectivo Semanal (MEV / MRV)
-- **Para qué sirve:** Computa semanalmente el recuento de series efectivas realizadas (filtradas por $\text{RPE} \ge 6.5$) agrupadas por movimiento principal y grupo muscular. Informa al levantador si su volumen se encuentra dentro del rango de estímulo efectivo o en riesgo de sobreentrenamiento.
+- **Para qué sirve:** Computa semanalmente el recuento de series efectivas realizadas (filtradas por RPE >= 6.5) agrupadas por movimiento principal (Sentadilla, Banca, Peso Muerto) y grupo muscular accesorio. Informa al levantador si su volumen se encuentra dentro del rango de estímulo efectivo o en riesgo de sobreentrenamiento.
 - **Nivel de dificultad:** Medio.
 
 ---
 
-## 2. Experiencia de Usuario (UX) en el Gimnasio (Mobile / PWA)
+## 2. Nivel Técnico y Arquitectura (Valor Curricular DAW)
 
-### 2.1 Modo de Visualización Compacto (Vista de Tabla Condensada)
-- **Para qué sirve:** En entrenamientos con alto número de series, las tarjetas verticales actuales ocupan bastante espacio vertical. Esta opción añade un selector para alternar a una visualización matricial densa en una sola fila (`SERIE | KG | REPS | RPE | CHECK`), optimizando la ergonomía en pantallas de 393 px (iPhone 16).
+### 2.1 Capa de Persistencia Asíncrona con IndexedDB
+- **Para qué sirve:** `localStorage` es síncrono y está limitado a aproximadamente 5 MB. La transición a IndexedDB (como paso intermedio o previo a la migración a SQL) garantiza almacenamiento virtualmente ilimitado y operaciones asíncronas no bloqueantes.
 - **Nivel de dificultad:** Medio.
 
----
-
-## 3. Nivel Técnico y Arquitectura (Valor Curricular DAW)
-
-### 3.1 Modularización de Código mediante ES Modules (ESM)
-- **Para qué sirve:** Descomponer el archivo monolítico `js/app.js` en submódulos especializados e independientes (`state.js`, `storage.js`, `formulas.js`, `workout-engine.js`, `pwa.js`, `ui-renderer.js`). Facilita el mantenimiento, evita acoplamientos, permite pruebas unitarias aisladas y demuestra aplicación rigurosa de principios de arquitectura de software.
+### 2.2 Modularización de Código mediante ES Modules (ESM)
+- **Para qué sirve:** Descomponer el archivo monolítico `js/app.js` en submódulos especializados e independientes (`state.js`, `storage.js`, `formulas.js`, `workout-engine.js`, `pwa.js`, `ui-renderer.js`). Facilita el mantenimiento, evita acoplamientos y demuestra aplicación rigurosa de principios de arquitectura de software.
 - **Nivel de dificultad:** Medio.
 
-### 3.2 Patrón Repositorio y Validación Estricta de Esquemas
-- **Para qué sirve:** Aislar la lógica de negocio de la implementación del motor de persistencia. Define interfaces formales para operaciones CRUD sobre sesiones, rutinas y marcas, validando la integridad de los datos mediante esquemas antes de confirmar cualquier escritura en el almacenamiento local.
+### 2.3 Patrón Repositorio y Validación Estricta de Esquemas
+- **Para qué sirve:** Aislar la lógica de negocio de la implementación del motor de persistencia. Define interfaces formales para operaciones CRUD sobre sesiones, rutinas y marcas, validando la integridad de los datos mediante esquemas antes de confirmar cualquier escritura.
 - **Nivel de dificultad:** Medio.
 
-### 3.3 Procesamiento Fuera del Hilo Principal con Web Workers
-- **Para qué sirve:** Desplazar cálculos matemáticos de gran escala (como el recálculo retroactivo de todos los récords de un historial de varios años o la agregación de métricas de fatiga) a un hilo secundario en segundo plano (`worker.js`). Garantiza que las animaciones y la navegación se mantengan a 60/120 FPS sin caídas de cuadros (*frame drops*).
+### 2.4 Procesamiento Fuera del Hilo Principal con Web Workers
+- **Para qué sirve:** Desplazar cálculos matemáticos de gran escala (como el recálculo retroactivo de todos los récords de un historial o la agregación de métricas de fatiga) a un hilo secundario en segundo plano (`worker.js`) para garantizar que las animaciones y la navegación se mantengan a 60/120 FPS sin caídas de cuadros.
 - **Nivel de dificultad:** Medio.
 
-### 4.4 Gestor de Estado Unidireccional con Patrón Pub/Sub y Soporte Deshacer (Undo)
-- **Para qué sirve:** Reemplazar las mutaciones directas sobre el objeto global `APP` por un gestor de eventos (`dispatch -> reducer -> state -> notify`), aportando trazabilidad total de eventos en consola y facilitando la implementación de acciones de recuperación inmediata (por ejemplo, deshacer un borrado accidental de serie o serie desmarcada por error).
+### 2.5 Gestor de Estado Unidireccional con Patrón Pub/Sub y Soporte Deshacer (Undo)
+- **Para qué sirve:** Reemplazar las mutaciones directas sobre el objeto global por un gestor de eventos (`dispatch -> reducer -> state -> notify`), aportando trazabilidad total de eventos en consola y facilitando acciones de recuperación inmediata (por ejemplo, deshacer un borrado accidental de serie).
 - **Nivel de dificultad:** Alto.
